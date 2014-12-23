@@ -3,7 +3,6 @@ var path = require("path");
 
 var exported = []; //dependencies exported by plugins
 var manualinjected = []; //manually injected dependencies
-var unresolved = []; //plugins not resolved because of missing dependencies
 
 function resolveDependency(name) {
 	var makeArray = false;
@@ -27,7 +26,6 @@ function resolveDependency(name) {
 	}
 
 	var val;
-
 	if (dependencies.length == 0)
 		val = makeArray ? [] : undefined;
 	else if (dependencies.length == 1 && !makeArray)
@@ -87,10 +85,36 @@ function addExport(where, name, plugin) {
 };
 
 function composePlugins(pluginsPath, onError, onDone, recursive) {
-	unresolved = [];
 	exported = [];
 
-	var oncomplete = function () {
+	var dirCount = 0;
+	var unresolved = [];
+	
+	function onDirComplete() {
+		if (--dirCount != 0) return;
+		
+		var getImports = function (p)
+		{
+			var imp = (p.__meta || {}).imports;
+			if (!imp) return [];
+			return typeof imp == "string" ? [imp] : imp;
+		};
+		
+		var resolveLater = function (i)
+		{
+			return i.indexOf("?") == 0 || i.indexOf(":") == 0;
+		};
+		
+		unresolved.sort(function (a,b)
+		{
+			var ia = getImports(a), ib = getImports(b);
+			if (ia.some(resolveLater)) return 1;
+			if (ib.some(resolveLater)) return -1;
+			return ia.length - ib.length;
+		});
+		
+		unresolved.forEach(function(p){console.log(p.__name, getImports(p));});
+		
 		while (unresolved.length != 0) {
 			var anyResolved = false;
 			for (var i=0; i<unresolved.length; i++) {
@@ -111,22 +135,15 @@ function composePlugins(pluginsPath, onError, onDone, recursive) {
 					}
 					onError(missing);
 				}
-				return false;
+				return;
 			}
 		}
-
-		return true;
-	};
-
-	var count = 0;
-	function onDirComplete() {
-		if (--count == 0)
-			if (oncomplete())
-				onDone();
+		
+		onDone();
 	};
 
 	var loadFromDir = function (dir) {
-		count++;
+		dirCount++;
 		fs.readdir(dir, function(err, files) {
 			if (err) { onDirComplete(); return; }
 			for (var i=0; i<files.length; i++) {
@@ -143,8 +160,7 @@ function composePlugins(pluginsPath, onError, onDone, recursive) {
 				plugin.__dir = dir;
 				plugin.__path = fullPath;
 				plugin.__name = file;
-				if (!tryCreatePlugin(plugin))
-					unresolved.push(plugin);
+				unresolved.push(plugin);
 			}
 			onDirComplete();
 		});
