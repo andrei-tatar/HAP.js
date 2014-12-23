@@ -1,18 +1,19 @@
 var path = require("path");
 var Catalog = require("./catalog");
-var catalog = new Catalog(path.join(__dirname , "plugins"), true);
+var catalog = new Catalog(path.join(__dirname, "plugins"), true);
 catalog.inject("preferencesPath", "prefs.json");
 catalog.inject("fs", require("fs"));
 catalog.compose({
 	error: function (missingDeps) {
 		missingDeps.forEach(function (m) {
-			var names = m.missing.reduce(function (a,b) {return a + "," + b;});
+			var names = m.missing.reduce(function (a, b) { return a + "," + b; });
 			console.log("Missing in " + m.name + ": " + names);
 		});
 	},
 	done: function () {
 		//console.log("All plugins composed!");
-	}});
+	}
+});
 return;
 
 

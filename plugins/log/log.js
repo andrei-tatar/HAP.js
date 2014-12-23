@@ -1,9 +1,8 @@
 var self = module.exports = function(writers) {
 	var logMessage = function(tag, msg, ex) {
-		//writers.write({tag:tag, message:msg, exception:ex});
-		writers.forEach(function (wr) {
-			wr.write({tag:tag, message:msg, exception:ex});
-		});
+		console.log(tag + ": " + msg + (ex ? " (" + ex + ")" : ""));
+		var logMessage = {tag:tag, message:msg, exception:ex};
+		writers.forEach(function (wr) { wr.write(logMessage); });
 	};
 	
 	this.i = function (msg, ex) {

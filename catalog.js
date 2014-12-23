@@ -5,19 +5,16 @@ var exported = []; //dependencies exported by plugins
 var manualinjected = []; //manually injected dependencies
 var unresolved = []; //plugins not resolved because of missing dependencies
 
-function resolveDependency(name, failOptionalDependencies) {
-	console.log(name + " - " + failOptionalDependencies);
+function resolveDependency(name) {
 	var makeArray = false;
 	var required = true;
 	if (name.indexOf(":") == 0) {
 		makeArray = true;
 		name = name.substr(1);
-		if (failOptionalDependencies) return { value: undefined, required: true };
 	}
 	if (name.indexOf("?") == 0) {
 		required = false;
 		name = name.substr(1);
-		if (failOptionalDependencies) return { value: undefined, required: true };
 	}
 
 	name = "^" + name + "$";
@@ -37,12 +34,10 @@ function resolveDependency(name, failOptionalDependencies) {
 		val = dependencies[0];
 	else
 		val = dependencies;
-	if (name.indexOf("logWriter") > 0)
-		console.log(exported);
 	return { value: val, required: required };
 };
 
-function resolveDependencies(names, failOptionalDependencies) {
+function resolveDependencies(names) {
 	if (typeof names == "string")
 		names = [names];
 	if (!names || names.length == 0)
@@ -51,7 +46,7 @@ function resolveDependencies(names, failOptionalDependencies) {
 	var args = [];
 	var missing = [];
 	for (var i=0; i<names.length; i++) {
-		var dep = resolveDependency(names[i], failOptionalDependencies);
+		var dep = resolveDependency(names[i]);
 		if (dep.required && !dep.value) {
 			missing.push(names[i]);
 			continue;
@@ -68,13 +63,13 @@ function applyToConstructor(constructor, argArray) {
 	return new factoryFunction();
 };
 
-function tryCreatePlugin(plugin, failOptionalDependencies) {
+function tryCreatePlugin(plugin) {
 	if (!plugin.bind) return true;
 
 	var meta = plugin.__meta || {};
 	var imports = meta.imports === "" ? "" : meta.imports || [];
 
-	var dep = resolveDependencies(imports, failOptionalDependencies);
+	var dep = resolveDependencies(imports);
 	if (dep.missing.length == 0) {
 		var instance = applyToConstructor(plugin, dep.params);
 		addExport(exported, meta.exports, instance);
@@ -96,20 +91,17 @@ function composePlugins(pluginsPath, onError, onDone, recursive) {
 	exported = [];
 
 	var oncomplete = function () {
-		var pass = 0;
 		while (unresolved.length != 0) {
 			var anyResolved = false;
 			for (var i=0; i<unresolved.length; i++) {
-				if (tryCreatePlugin(unresolved[i], pass == 0)) {
+				if (tryCreatePlugin(unresolved[i])) {
 					unresolved.splice(i, 1);
 					i--;
 					anyResolved = true;
 					continue;
 				}
 			}
-
-			console.log("Pass : "+(pass++) + " - " + anyResolved);
-
+			
 			if (!anyResolved) {
 				if (onError) {
 					var missing = [];
@@ -151,7 +143,7 @@ function composePlugins(pluginsPath, onError, onDone, recursive) {
 				plugin.__dir = dir;
 				plugin.__path = fullPath;
 				plugin.__name = file;
-				if (!tryCreatePlugin(plugin, true))
+				if (!tryCreatePlugin(plugin))
 					unresolved.push(plugin);
 			}
 			onDirComplete();
