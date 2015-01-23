@@ -1,31 +1,4 @@
 <script>
-$.ajax({
-	url: "/container/items/{{=it.id}}",
-}).done(function(items) {
-	var root = $("[{{=it.attrib()}}]");
-	var total = 0;
-	var results = [];
-	
-	for (var key in items) {
-		total++;
-		getChildHtml("{{=it.id}}", items[key], function (html, child) {
-			results.push({html:html, child:child});
-			total--;
-			if (total == 0) {
-				results.sort(function (a,b) {
-					return a.child.order - b.child.order;
-				});
-				results.forEach(function (r) {
-					addContainerChild($("[{{=it.attrib()}}]"), r.html, r.child);
-				});
-			}
-		});
-	}
-});
-
-socket.on("container update {{=it.id}}", function (child) {
-	getChildHtml("{{=it.id}}", child, function (html, ch) {
-		addContainerChild($("[{{=it.attrib()}}]"), html, ch);
-	});
-});
+containerLoadAllItems('{{=it.id}}', $("[{{=it.attrib()}}]"));
+socket.on("container update {{=it.id}}", containerUpdateItem.bind(this, '{{=it.id}}', $("[{{=it.attrib()}}]")));
 </script>

@@ -1,0 +1,1 @@
+npm install compression dot esprima express nodemon socket.io

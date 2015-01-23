@@ -50,17 +50,19 @@ var self = module.exports = function(web, dot, fs, path, __dir) {
                 var reduced = map(child);
                 web.emit("container update " + container.id, reduced);
                 
-                return {
-                    refresh: function() {
-                        web.emit("container update " + container.id, reduced);
-                    },
+                child.refresh = function() {
+                    web.emit("container update " + container.id, reduced);
+                };
                     
-                    remove: function() {
-                        delete container.items[id];
-                        delete child.parent;
-                        if (child.onremove) child.onremove();
-                        web.emit("container remove", id);
-                    }
+                child.remove = function() {
+                    if (child.onremove) child.onremove();
+                    
+                    delete container.items[id];
+                    delete child.parent;
+                    delete child.remove;
+                    delete child.refresh;
+                    
+                    web.emit("container remove", id);
                 };
             },
         };

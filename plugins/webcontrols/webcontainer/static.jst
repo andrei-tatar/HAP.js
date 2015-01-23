@@ -1,6 +1,7 @@
 <script>
 socket.on("container remove", function (id) {
-	$("div[data-id='"+id+"']").remove();
+	$("[data-ownedby='"+id+"']").remove();
+    $("[data-id='"+id+"']").remove();
 });
 
 function getChildHtml(parentId, child, callback) {
@@ -11,21 +12,56 @@ function getChildHtml(parentId, child, callback) {
 	});
 }
 
-function addContainerChild(mainElement, html, child) {
-	var element = $("<div>" + html + "</div>");
-	element.attr("data-id", child.id);
-	element.attr("data-order", child.order);
+function containerUpdateItem(containerId, rootElement, child) {
+	getChildHtml(containerId, child, function (html, ch) {
+		addContainerChild(rootElement, html, ch);
+	});
+}
 
-	var prevElement = $("div[data-id='"+child.id+"']");
+function containerLoadAllItems(containerId, rootElement) {
+    $.ajax({
+        url: "/container/items/" + containerId,
+    }).done(function(items) {
+        var total = 0;
+        var results = [];
+        
+        for (var key in items) {
+            total++;
+            getChildHtml(containerId, items[key], function (html, child) {
+                results.push({html:html, child:child});
+                total--;
+                if (total == 0) {
+                    results.sort(function (a,b) {
+                        return a.child.order - b.child.order;
+                    });
+                    results.forEach(function (r) {
+                        addContainerChild(rootElement, r.html, r.child);
+                    });
+                }
+            });
+        }
+    });
+}
+
+function addContainerChild(rootElement, html, child) {
+	var element = html.indexOf("<") == 0 ? $(html) : $("<div>" + html + "</div>");
+    element.each(function (index) {
+        $(this).attr(index == 0 ? 
+            {"data-id": child.id, "data-order": child.order} : 
+            {"data-ownedby": child.id});
+    });
+
+	var prevElement = $("[data-id='"+child.id+"']");
 	if (prevElement.length > 0) {
+        $("[data-ownedby='"+child.id+"']").remove();
 		prevElement.replaceWith(element);
 		return;
 	}
 	
 	var prevChild = undefined;
-	var children = mainElement.children();
+	var children = rootElement.children();
 	if (children.length == 0) {
-		mainElement.append(element);
+		rootElement.append(element);
 		return;
 	}
 	
@@ -36,14 +72,14 @@ function addContainerChild(mainElement, html, child) {
 			if (prevChild)
 				element.insertAfter(prevChild);
 			else
-				mainElement.prepend(element);
+				rootElement.prepend(element);
 			return;
 		}
 		
 		prevChild = child;
 	}
 	
-	mainElement.append(element);
+	rootElement.append(element);
 };
 
 $.ajax({
