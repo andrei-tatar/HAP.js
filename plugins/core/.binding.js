@@ -82,6 +82,5 @@ var self = module.exports = function(log) {
 	};
 };
 self.__meta = {
-	imports: "log",
 	exports: "binding"
 };

@@ -1,0 +1,54 @@
+<script>
+socket.on("container remove", function (id) {
+	$("div[data-id='"+id+"']").remove();
+});
+
+function getChildHtml(parentId, child, callback) {
+	$.ajax({
+		url: "/container/render/" + parentId + "/" + child.id,
+	}).done(function (html) {
+		callback(html, child);
+	});
+}
+
+function addContainerChild(mainElement, html, child) {
+	var element = $("<div>" + html + "</div>");
+	element.attr("data-id", child.id);
+	element.attr("data-order", child.order);
+
+	var prevElement = $("div[data-id='"+child.id+"']");
+	if (prevElement.length > 0) {
+		prevElement.replaceWith(element);
+		return;
+	}
+	
+	var prevChild = undefined;
+	var children = mainElement.children();
+	if (children.length == 0) {
+		mainElement.append(element);
+		return;
+	}
+	
+	for (var i=0;i<children.length; i++) {
+		child = $(children[i]);
+		var order = child.attr("data-order");
+		if (child.order < order) {
+			if (prevChild)
+				element.insertAfter(prevChild);
+			else
+				mainElement.prepend(element);
+			return;
+		}
+		
+		prevChild = child;
+	}
+	
+	mainElement.append(element);
+};
+
+$.ajax({
+	url: "/rootcontainer"
+}).done(function (data) {
+	$("body").append(data);
+});
+</script>

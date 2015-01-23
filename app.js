@@ -1,9 +1,19 @@
 var path = require("path");
 var Catalog = require("./catalog");
-var catalog = new Catalog(path.join(__dirname, "plugins"), true);
+var catalog = new Catalog(
+	[
+		path.join(__dirname, "plugins"), 
+		path.join(__dirname, "scripts")
+	], true);
+	
 catalog.inject("preferencesPath", "prefs.json");
 catalog.inject("fs", require("fs"));
+catalog.inject("path", require("path"));
+catalog.inject("dot", require("dot"));
+catalog.inject("express", require("express"));
+catalog.inject("catalog", catalog);
 catalog.compose({
+	//debug: true,
 	error: function (missingDeps) {
 		missingDeps.forEach(function (m) {
 			var names = m.missing.reduce(function (a, b) { return a + "," + b; });
@@ -11,22 +21,7 @@ catalog.compose({
 		});
 	},
 	done: function () {
-		//console.log("All plugins composed!");
+		var log = catalog.resolve("log");
+		log.i("All composed!");
 	}
-});
-return;
-
-
-var express = require('express');
-var app = express();
-
-app.use(express.static(__dirname + '/public'));
-
-app.get('/', function (req, res) {
-	res.redirect("/index.html");
-});
-
-var server = app.listen(3000, function () {
-	var address = server.address();
-	console.log('Listening at http://%s:%s', address.address, address.port);
 });

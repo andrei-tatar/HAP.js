@@ -1,49 +1,8 @@
-function objectObserver(obj, ponchanged) {
-	var observers = {};
-	var onchanged = function (changes) {
-		var grouped = {};
-		changes.forEach(function (change) {
-			grouped[change.name] = change;
-		});
-		for (var key in grouped) {
-			var change = grouped[key];
-			switch (change.type) {
-				case "add": 
-				case "update":
-					var prev = observers[key];
-					if (prev) prev.stop();
-					var sub = obj[key];
-					if (typeof sub === "object")
-						observers[key] = new objectObserver(sub, ponchanged);
-					break;
-				case "delete":
-					var prev = observers[key];
-					if (prev) prev.stop();
-					delete observers[key];
-					break;
-			}
-			
-			ponchanged();
-		}
-	};
-
-	Object.observe(obj, onchanged);
-	for (var key in obj) {
-		var sub = obj[key];
-		if (typeof sub === "object")
-			observers[key] = new objectObserver(sub, ponchanged);
-	}
-	
-	this.stop = function() {
-		Object.unobserve(obj, onchanged);
-		for (var key in observers)
-			observers[key].stop();
-	};
-};
-
-var self = module.exports = function(fs, log, path, saveTimeout) {
+var self = module.exports = function(fs, log, path, saveTimeout, watcher, util) {
 	saveTimeout = saveTimeout || 500;
 	path = path || "preferences.json";
+	
+	log.v("Using preference file: " + path);
 	
 	var load = function () {
 		try {
@@ -52,6 +11,7 @@ var self = module.exports = function(fs, log, path, saveTimeout) {
 			for (var k in obj) {
 				this[k] = obj[k];
 			}
+			log.v("Preferences loaded");
 		}
 		catch (e) {
 			log.e("Could not load preferences", e);
@@ -64,21 +24,16 @@ var self = module.exports = function(fs, log, path, saveTimeout) {
 			if (e) {
 				log.e("Could not save preferences", e);
 			} else {
-				log.i("Preferences saved");
+				log.v("Preferences saved");
 			}
 		});
 	}.bind(this);
 	
 	load();
 	
-	var timer = undefined;
-	
-	new objectObserver(this, function() {
-		if (timer) clearTimeout(timer);
-		timer = setTimeout(save, saveTimeout);
-	});
+	watcher.create(this, util.throttle(saveTimeout, save));
 };
 self.__meta = {
-	imports: ["fs", "log", "?preferencesPath", "?preferencesSaveTimeout"],
+	imports: ["fs", "log", "?preferencesPath", "?preferencesSaveTimeout", "watcher", "util"],
 	exports: "preferences"
 };

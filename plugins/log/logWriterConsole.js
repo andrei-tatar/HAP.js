@@ -1,8 +1,11 @@
 var self = module.exports = function() {
-	this.write = function (e) {
-		console.log(e.tag + ": " + e.message + (e.ex ? " (" + e.ex + ")" : ""));
+	this.write = function (l) {
+		var time = new Date(l.timestamp);
+		var ex = l.ex ? " (" + l.ex + ")" : "";
+		var timetag = time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds();
+		console.log("[" + timetag + "][" + l.tag + "]" + l.message + ex);
 	};
 };
 self.__meta = {
-	exports: "logWriterConsole"
+	exports: "logWriter_console"
 };

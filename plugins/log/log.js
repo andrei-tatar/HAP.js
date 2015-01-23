@@ -1,6 +1,12 @@
 var self = module.exports = function(writers) {
 	var logMessage = function(tag, msg, ex) {
-		var logMessage = {tag:tag, message:msg, exception:ex};
+		var logMessage = 
+		{
+			tag:tag, 
+			message:msg, 
+			exception:ex, 
+			timestamp:Date.now()
+		};
 		writers.forEach(function (wr) { wr.write(logMessage); });
 	};
 	
@@ -21,6 +27,6 @@ var self = module.exports = function(writers) {
 	};
 };
 self.__meta = {
-	imports: ":logWriter.*",
+	imports: ":logWriter_.*",
 	exports: "log"
 };

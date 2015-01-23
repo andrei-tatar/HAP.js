@@ -1,10 +1,14 @@
 var fs = require("fs");
 var path = require("path");
+var esprima = require("esprima");
 
 var exported = []; //dependencies exported by plugins
 var manualinjected = []; //manually injected dependencies
 
-function resolveDependency(name) {
+function resolveDependency(name, plugin) {
+	if (name == "__dir")
+		return { value: plugin.__dir, required: false };
+
 	var makeArray = false;
 	var required = true;
 	if (name.indexOf(":") == 0) {
@@ -35,7 +39,7 @@ function resolveDependency(name) {
 	return { value: val, required: required };
 };
 
-function resolveDependencies(names) {
+function resolveDependencies(names, plugin) {
 	if (typeof names == "string")
 		names = [names];
 	if (!names || names.length == 0)
@@ -44,7 +48,7 @@ function resolveDependencies(names) {
 	var args = [];
 	var missing = [];
 	for (var i=0; i<names.length; i++) {
-		var dep = resolveDependency(names[i]);
+		var dep = resolveDependency(names[i], plugin);
 		if (dep.required && !dep.value) {
 			missing.push(names[i]);
 			continue;
@@ -61,13 +65,27 @@ function applyToConstructor(constructor, argArray) {
 	return new factoryFunction();
 };
 
+function getImports(plugin) {
+	if (plugin.__imports)
+		return plugin.__imports;
+		
+	var imp = (plugin.__meta || {}).imports;
+	if (!imp) {
+		var parsed = esprima.parse("safetyValve = " + plugin.toString())
+		imp = parsed.body[0].expression.right.params.map(function(c){return c.name;});
+	}
+	
+	plugin.__imports = typeof imp == "string" ? [imp] : imp;
+	return plugin.__imports;
+};
+
 function tryCreatePlugin(plugin) {
 	if (!plugin.bind) return true;
 
 	var meta = plugin.__meta || {};
-	var imports = meta.imports === "" ? "" : meta.imports || [];
+	var imports = getImports(plugin);	
 
-	var dep = resolveDependencies(imports);
+	var dep = resolveDependencies(imports, plugin);
 	if (dep.missing.length == 0) {
 		var instance = applyToConstructor(plugin, dep.params);
 		addExport(exported, meta.exports, instance);
@@ -81,10 +99,16 @@ function tryCreatePlugin(plugin) {
 
 function addExport(where, name, plugin) {
 	if (!name || !name.length || name.length == 0) return;
+	plugin.__exports = name;
 	where.push({ key: name, value: plugin });
 };
 
-function composePlugins(pluginsPath, onError, onDone, recursive) {
+function isFunction(functionToCheck) {
+	var getType = {};
+	return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+}
+
+function composePlugins(paths, onError, onDone, recursive, debug) {
 	exported = [];
 
 	var dirCount = 0;
@@ -93,36 +117,42 @@ function composePlugins(pluginsPath, onError, onDone, recursive) {
 	function onDirComplete() {
 		if (--dirCount != 0) return;
 		
-		var getImports = function (p)
-		{
-			var imp = (p.__meta || {}).imports;
-			if (!imp) return [];
-			return typeof imp == "string" ? [imp] : imp;
-		};
-		
-		var resolveLater = function (i)
-		{
+		var resolveLater = function (i) {
 			return i.indexOf("?") == 0 || i.indexOf(":") == 0;
 		};
 		
-		unresolved.sort(function (a,b)
-		{
+		unresolved.sort(function (a,b) {
 			var ia = getImports(a), ib = getImports(b);
 			if (ia.some(resolveLater)) return 1;
 			if (ib.some(resolveLater)) return -1;
 			return ia.length - ib.length;
 		});
 		
-		unresolved.forEach(function(p){console.log(p.__name, getImports(p));});
+		if (debug) {
+			console.log("Resolve plugins/dependencies in order:");
+			unresolved.forEach(function(p){console.log(p.__name, getImports(p));});
+		}
 		
 		while (unresolved.length != 0) {
 			var anyResolved = false;
 			for (var i=0; i<unresolved.length; i++) {
-				if (tryCreatePlugin(unresolved[i])) {
-					unresolved.splice(i, 1);
-					i--;
-					anyResolved = true;
-					continue;
+				var plugin = unresolved[i];
+				var result;
+				try {	
+					if (tryCreatePlugin(plugin)) {
+						unresolved.splice(i, 1);
+						i--;
+						anyResolved = true;
+						if (debug)
+							result = "Resolved!";
+						continue;
+					}
+					if (debug)
+						result = "Missing " + plugin.__missing;
+				}
+				finally {
+					if (debug)
+						console.log("Resolving " + plugin.__name + "... " + result);
 				}
 			}
 			
@@ -133,6 +163,7 @@ function composePlugins(pluginsPath, onError, onDone, recursive) {
 						var p = unresolved[i];
 						missing.push({name: p.__name, missing: p.__missing});
 					}
+					
 					onError(missing);
 				}
 				return;
@@ -148,6 +179,9 @@ function composePlugins(pluginsPath, onError, onDone, recursive) {
 			if (err) { onDirComplete(); return; }
 			for (var i=0; i<files.length; i++) {
 				var file = files[i];
+				if (file.indexOf('.') == 0)
+					continue;
+					
 				var fullPath = path.join(dir, file);
 				var stat = fs.statSync(fullPath);
 				if (stat && stat.isDirectory()) {
@@ -156,22 +190,37 @@ function composePlugins(pluginsPath, onError, onDone, recursive) {
 					continue;
 				}
 
-				var plugin = require (fullPath);
-				plugin.__dir = dir;
-				plugin.__path = fullPath;
-				plugin.__name = file;
-				unresolved.push(plugin);
+				if (path.extname(file).toLowerCase() != ".js")
+					continue;
+				
+				try {
+					var plugin = require(fullPath);
+					if (!isFunction(plugin)) {
+						if (debug)
+							console.log("Ignoring not function plugin " + file);
+						continue;
+					}
+
+					plugin.__dir = dir;
+					plugin.__path = fullPath;
+					plugin.__name = file;
+					unresolved.push(plugin);
+				}
+				catch (err) {
+					if (debug) {
+						console.log("Error loading " + file);
+						console.log(err);
+					}
+				}
 			}
 			onDirComplete();
 		});
 	};
 
-	loadFromDir(pluginsPath);
-
-	return true;
+	paths.forEach(loadFromDir);
 };
 
-module.exports = function (pluginpath, recursive) {
+module.exports = function (paths, recursive) {
 	this.resolve = function (name) {
 		return resolveDependency(name).value;
 	};
@@ -182,6 +231,9 @@ module.exports = function (pluginpath, recursive) {
 
 	this.compose = function (options) {
 		options = options || {};
-		return composePlugins(pluginpath, options.error, options.done, recursive);
+		if (typeof paths === "string") paths = [paths];
+		composePlugins(paths, options.error, options.done, recursive, options.debug);
 	};
+	
+	this.inject("container", this);
 };
