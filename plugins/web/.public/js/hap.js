@@ -1,7 +1,7 @@
 socket = io();
 
 $.ajax({
-	url: "/static",
+    url: "/static",
 }).done(function(staticHtml) {
-	$("body").append(staticHtml);
+    $("body").append(staticHtml);
 });
