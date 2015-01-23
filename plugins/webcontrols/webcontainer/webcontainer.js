@@ -1,6 +1,6 @@
 var self = module.exports = function(web, dot, fs, path, __dir) {
-    var sf = dot.template(fs.readFileSync(path.join(__dir, "webcontainer.jst")));
-    var dt = fs.readFileSync(path.join(__dir, "webcontainer.html"));
+    var defaultTemplate = fs.readFileSync(path.join(__dir, "webcontainer.html"));
+    var defaultScriptTemplate = fs.readFileSync(path.join(__dir, "webcontainer.script.html"));
     
     var containers = [];
     var idutil = 0;
@@ -21,8 +21,9 @@ var self = module.exports = function(web, dot, fs, path, __dir) {
         return undefined;
     };
     
-    this.create = function(template) {
-        var tf = dot.template(template || dt);
+    this.create = function(template, scriptTemplate) {
+        var tf = dot.template(template || defaultTemplate);
+        var sf = dot.template(scriptTemplate  || defaultScriptTemplate);
         
         var container = {
             items: {},
@@ -109,7 +110,7 @@ var self = module.exports = function(web, dot, fs, path, __dir) {
     root.id = idutil++;
     
     this.root = root;
-    web.append(fs.readFileSync(path.join(__dir, "static.jst")));
+    web.append(fs.readFileSync(path.join(__dir, "webcontainer.static.html")));
     web.app.get("/rootcontainer", function (req, res) {
         res.send(root.html());
     });

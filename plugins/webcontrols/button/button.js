@@ -19,7 +19,7 @@ var self = module.exports = function(web, webcontainer, dot, fs, path, __dir) {
             button.click();
     });
     
-    web.append(fs.readFileSync(path.join(__dir, "static.jst")));
+    web.append(fs.readFileSync(path.join(__dir, "button.static.html")));
 };
 self.__meta = {
     exports: "button"
