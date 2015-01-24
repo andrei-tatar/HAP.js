@@ -64,10 +64,10 @@ var self = module.exports = function(util, dot, $pluginDir) {
                     child.parent = container;
                     container.items.push(child);
                     var simplified = simplifyContainerChild(child);
-                    web.emit("container update " + container.id, simplified);
+                    web.emit("ct_upd", {id: container.id, attrib: container.attrib(), child: simplified});
                     
                     child.refresh = function() {
-                        web.emit("container update " + container.id, simplified);
+                        web.emit("ct_upd", {id: container.id, attrib: container.attrib(), child: simplified});
                     };
                         
                     child.remove = function() {
@@ -78,7 +78,7 @@ var self = module.exports = function(util, dot, $pluginDir) {
                         delete child.remove;
                         delete child.refresh;
                         
-                        web.emit("container remove", id);
+                        web.emit("ct_rm", id);
                     };
                 },
             };

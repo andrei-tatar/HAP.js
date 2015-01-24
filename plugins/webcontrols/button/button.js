@@ -14,7 +14,7 @@ var self = module.exports = function(util, $pluginDir) {
             return button;
         };
         
-        web.on("button click", function (id) {
+        web.on("bt_clk", function (id) {
             var button = web.findControl(id, true);
             if (button && button.click)
                 button.click();

@@ -1,50 +1,30 @@
 <script>
-socket.on("container remove", function (id) {
+socket.on("ct_rm", function (id) {
 	$("[data-ownedby='"+id+"']").remove();
     $("[data-id='"+id+"']").remove();
 });
 
-function getChildHtml(parentId, child, callback) {
-	$.ajax({
-		url: "/container/render/" + parentId + "/" + child.id,
-	}).done(function (html) {
-		callback(html, child);
-	});
-}
-
-function containerUpdateItem(containerId, rootElement, child) {
-	getChildHtml(containerId, child, function (html, ch) {
-		addContainerChild(rootElement, html, ch);
-	});
-}
-
-function containerLoadAllItems(containerId, rootElement) {
+socket.on("ct_upd", function (arg) {
     $.ajax({
-        url: "/container/items/" + containerId,
-    }).done(function(items) {
-        var total = 0;
-        var results = [];
+		url: "/container/render/" + arg.id + "/" + arg.child.id,
+	}).done(function (html) {
+		addContainerChild($("["+arg.attrib+"]"), html, arg.child);
+	});
+});
+
+function cLoad(ids) {
+    ids.forEach(function (id) {
+        var element = $("[data-static-id="+id+"]");
+        element.remove();
+
+        var parentid = element.attr("data-static-parent");
+        var parent = $("["+parentid+"]");
+        var order = element.attr("data-static-order");
         
-        for (var i=0;i<items.length;i++) {
-            total++;
-            var item = items[i];
-            item.index = i;
-            getChildHtml(containerId, item, function (html, child) {
-                child.html = html;
-                results.push(child);
-                total--;
-                if (total == 0) {
-                    results.sort(function (a,b) {
-                        if (a.order == b.order)
-                            return a.index - b.index;
-                        return a.order - b.order;
-                    });
-                    results.forEach(function (r) {
-                        addContainerChild(rootElement, r.html, r);
-                    });
-                }
-            });
-        }
+        addContainerChild(parent, element.text(), {
+            id: id,
+            order: order
+        });
     });
 }
 

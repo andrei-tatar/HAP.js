@@ -1,4 +1,20 @@
+{{
+function escapeHTML (unsafe_str) {
+    return unsafe_str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\"/g, '&quot;')
+      .replace(/\'/g, '&#39;');
+}
+}}
+{{for (var i=0; i<it.items.length;i++) { var item = it.items[i]; }}
+<div data-static-id="{{=item.id}}" 
+     data-static-parent="{{=it.attrib()}}"
+     data-static-order="{{=item.order}}">
+{{=escapeHTML(item.html())}}
+</div>
+{{ } }}
 <script>
-containerLoadAllItems('{{=it.id}}', $("[{{=it.attrib()}}]"));
-socket.on("container update {{=it.id}}", containerUpdateItem.bind(this, '{{=it.id}}', $("[{{=it.attrib()}}]")));
+cLoad([{{=it.items.map(function(r){return r.id})}}]);
 </script>
