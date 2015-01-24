@@ -6,7 +6,7 @@ var exported = []; //dependencies exported by plugins
 var manualinjected = []; //manually injected dependencies
 
 function resolveDependency(name, plugin) {
-    if (name == "__dir")
+    if (name == "$pluginDir")
         return { value: plugin.__dir, required: false };
 
     var makeArray = false;
@@ -89,6 +89,9 @@ function tryCreatePlugin(plugin) {
     if (dep.missing.length == 0) {
         var instance = applyToConstructor(plugin, dep.params);
         addExport(exported, meta.exports, instance);
+        instance.__dir = plugin.__dir;
+        instance.__path = plugin.__path;
+        instance.__name = plugin.__name;
         return true;
     } else {
         plugin.__missing = dep.missing;
@@ -234,6 +237,4 @@ module.exports = function (paths, recursive) {
         if (typeof paths === "string") paths = [paths];
         composePlugins(paths, options.error, options.done, recursive, options.debug);
     };
-    
-    this.inject("container", this);
 };

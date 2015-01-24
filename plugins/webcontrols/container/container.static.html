@@ -25,17 +25,22 @@ function containerLoadAllItems(containerId, rootElement) {
         var total = 0;
         var results = [];
         
-        for (var key in items) {
+        for (var i=0;i<items.length;i++) {
             total++;
-            getChildHtml(containerId, items[key], function (html, child) {
-                results.push({html:html, child:child});
+            var item = items[i];
+            item.index = i;
+            getChildHtml(containerId, item, function (html, child) {
+                child.html = html;
+                results.push(child);
                 total--;
                 if (total == 0) {
                     results.sort(function (a,b) {
-                        return a.child.order - b.child.order;
+                        if (a.order == b.order)
+                            return a.index - b.index;
+                        return a.order - b.order;
                     });
                     results.forEach(function (r) {
-                        addContainerChild(rootElement, r.html, r.child);
+                        addContainerChild(rootElement, r.html, r);
                     });
                 }
             });

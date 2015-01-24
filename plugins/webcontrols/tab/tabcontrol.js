@@ -1,41 +1,43 @@
-var self = module.exports = function(webcontainer, dot, fs, path, __dir) {
-    var headerTemplate = dot.template(fs.readFileSync(path.join(__dir, "tabheader.html")));
-    var tabControlTemplate = fs.readFileSync(path.join(__dir, "tabcontrol.html"));
-    var tabHeadersTemplate = fs.readFileSync(path.join(__dir, "tabheaders.html"));
-    var tabPagesTemplate = fs.readFileSync(path.join(__dir, "tabpages.html"));
+var self = module.exports = function(util, $pluginDir) {
+    var headerTemplate = util.lazyTemplate("tabheader.html", $pluginDir); 
+    var tabControlTemplate = util.lazyTemplate("tabcontrol.html", $pluginDir);
+    var tabHeadersTemplate = util.lazyTemplate("tabheaders.html", $pluginDir);
+    var tabPagesTemplate = util.lazyTemplate("tabpages.html", $pluginDir);
     
-    this.create = function() {
-        var tabcontrol = webcontainer.create(tabControlTemplate);
-        var tabheaders = webcontainer.create(tabHeadersTemplate);
-        tabcontrol.add(tabheaders);
-        var tabpages = webcontainer.create(tabPagesTemplate);
-        tabcontrol.add(tabpages);
-        
-        tabcontrol.add = function (child) {
-            tabpages.add(child);
-            var header = {
-                html: function () {
-                    return headerTemplate(child);
-                }
-            };
-            tabheaders.add(header);
+    this.init = function(web) {
+        web.TabControl = function() {
+            var tabcontrol = new web.Container(tabControlTemplate);
+            var tabheaders = new web.Container(tabHeadersTemplate);
+            tabcontrol.add(tabheaders);
+            var tabpages = new web.Container(tabPagesTemplate);
+            tabcontrol.add(tabpages);
             
-            var oldrefresh = child.refresh;
-            child.refresh = function () {
-                oldrefresh();
-                header.refresh();
+            tabcontrol.add = function (child) {
+                tabpages.add(child);
+                var header = {
+                    html: function () {
+                        return headerTemplate.value()(child);
+                    }
+                };
+                tabheaders.add(header);
+                
+                var oldrefresh = child.refresh;
+                child.refresh = function () {
+                    oldrefresh();
+                    header.refresh();
+                };
+                
+                var oldremove = child.remove;
+                child.remove = function () {
+                    oldremove();
+                    header.remove();
+                };
             };
             
-            var oldremove = child.remove;
-            child.remove = function () {
-                oldremove();
-                header.remove();
-            };
+            return tabcontrol;
         };
-        
-        return tabcontrol;
-    };
+    }
 };
 self.__meta = {
-    exports: "tabcontrol"
+    exports: "web_tabcontrol"
 };

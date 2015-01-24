@@ -1,12 +1,14 @@
-var self = module.exports = function(webcontainer, fs, path, __dir) {
-    var tabPageTemplate = fs.readFileSync(path.join(__dir, "tabpage.html"));
+var self = module.exports = function(util, $pluginDir) {
+    var template = util.lazyTemplate("tabpage.html", $pluginDir);
     
-    this.create = function (opt) {
-        var page = webcontainer.create(tabPageTemplate);
-        page.title = opt.title;
-        return page;
-    };
+    this.init = function (web) {
+        web.TabPage = function (opt) {
+            var page = new web.Container(template);
+            page.title = opt.title;
+            return page;
+        };
+    }
 };
 self.__meta = {
-    exports: "tabpage"
+    exports: "web_tabpage"
 };

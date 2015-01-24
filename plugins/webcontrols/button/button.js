@@ -1,26 +1,28 @@
-var self = module.exports = function(web, webcontainer, dot, fs, path, __dir) {
-    var template = dot.template(fs.readFileSync(path.join(__dir, "button.html")));
+var self = module.exports = function(util, $pluginDir) {
+    var template = util.lazyTemplate("button.html", $pluginDir);
     
-    this.create = function(opt) {
-        var button = {
-            html: function () {
-                return template(button);
+    this.init = function (web) {
+        web.Button = function(opt) {
+            var button = {
+                html: function () {
+                    return template.value()(button);
+                }
+            };
+            for (var key in opt) {
+                button[key] = opt[key];
             }
+            return button;
         };
-        for (var key in opt) {
-            button[key] = opt[key];
-        }
-        return button;
-    };
-    
-    web.on("button click", function (id) {
-        var button = webcontainer.find(id);
-        if (button && button.click)
-            button.click();
-    });
-    
-    web.append(fs.readFileSync(path.join(__dir, "button.static.html")));
+        
+        web.on("button click", function (id) {
+            var button = web.findControl(id, true);
+            if (button && button.click)
+                button.click();
+        });
+        
+        web.append(util.readFile("button.static.html", $pluginDir));
+    }
 };
 self.__meta = {
-    exports: "button"
+    exports: "web_button"
 };

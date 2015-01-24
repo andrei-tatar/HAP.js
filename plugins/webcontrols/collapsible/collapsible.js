@@ -1,12 +1,14 @@
-var self = module.exports = function(webcontainer, dot, fs, path, __dir) {
-    this.create = function(opt) {
-        var g = webcontainer.create(fs.readFileSync(path.join(__dir, "collapsible.html")));
-        for (var key in opt) {
-            g[key] = opt[key];
-        }
-        return g;
+var self = module.exports = function(util, $pluginDir) {
+    var template = util.lazyTemplate("collapsible.html", $pluginDir);
+    
+    this.init = function (web) {
+        web.Collapsible = function(opt) {
+            var collapsible = new web.Container(template);
+            collapsible.title = opt.title;
+            return collapsible;
+        };
     };
 };
 self.__meta = {
-    exports: "collapsible"
+    exports: "web_collapsible"
 };

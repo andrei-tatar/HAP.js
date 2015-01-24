@@ -1,4 +1,4 @@
-var self = module.exports = function(preferences, log, express, watcher, util) {
+var self = module.exports = function(preferences, log, express, watcher, util, components) {
     if (!preferences.web) {
         preferences.web = {
             port: 1234
@@ -53,7 +53,12 @@ var self = module.exports = function(preferences, log, express, watcher, util) {
             //log.i('user disconnected');
         });
     });
+    
+    components.sort(function(a,b){return (a.order||0)-(b.order||0);});
+    for (var i=0; i<components.length; i++)
+        components[i].init(this);
 };
 self.__meta = {
+    imports: ["preferences", "log", "express", "watcher", "util", ":web_.+"],
     exports: "web"
 };

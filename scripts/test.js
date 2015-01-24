@@ -1,12 +1,12 @@
-var self = module.exports = function(webcontainer, collapsible, button, tabcontrol, tabpage) {
-    var tabc = tabcontrol.create();
+var self = module.exports = function(web) {
+    var tabc = new web.TabControl();
     
     var c = 1;
-    webcontainer.root.add(button.create({
+    web.root.add(new web.Button({
         text: "Add",
         click: function() {
-            var newPage = tabpage.create({title: "Page " + c++});
-            newPage.add(button.create({
+            var newPage = new web.TabPage({title: "Page " + c++});
+            newPage.add(new web.Button({
                 text: "Remove",
                 click: function() {
                     newPage.remove();
@@ -17,8 +17,8 @@ var self = module.exports = function(webcontainer, collapsible, button, tabcontr
     }));
     
     
-    var page1 = tabpage.create({title: "Page 1"});
-    var page2 = tabpage.create({title: "Page 2"});
+    var page1 = new web.TabPage({title: "Page 1"});
+    var page2 = new web.TabPage({title: "Page 2"});
     
     tabc.add(page1);
     tabc.add(page2);
@@ -26,14 +26,14 @@ var self = module.exports = function(webcontainer, collapsible, button, tabcontr
     page1.add("Test Item on Page 1");
     page2.add("Test Item on Page 2");
     page2.add("This really works?");
-    page2.add(button.create({
+    page2.add(new web.Button({
         text: "Remove this page!",
         click: function() {
             page2.remove();
         }
     }));
     
-    page1.add(button.create({
+    page1.add(new web.Button({
         text: "Change title",
         click: function() {
             page1.title += ".";
@@ -41,35 +41,45 @@ var self = module.exports = function(webcontainer, collapsible, button, tabcontr
         }
     }));
     
-    webcontainer.root.add(tabc);
-    return;
+    web.root.add(tabc);
     
+    var page3 = new web.TabPage({title: "Collapsibles"});
+    tabc.add(page3);
     
-    var tempGroup = collapsible.create({title: "Temperatura"});
-    webcontainer.root.add(tempGroup);
+    var tempGroup = new web.Collapsible({title: "Temperatura"});
+    page3.add(tempGroup);
 
     var iii=0; 
-    var st = tempGroup.add({html: function(){return "Count "+iii++; }});
+    var st = {html: function(){return "Count "+iii++; }};
+    tempGroup.add(st);
     
-    var subGroup = collapsible.create({title:"Sub"});
-    subAdded = tempGroup.add(subGroup);
+    var subGroup = new web.Collapsible({title:"Sub"});
+    tempGroup.add(subGroup);
     var i =0;
-    webcontainer.root.add(button.create({
+    page3.add(new web.Button({
         text: "Add",
         click: function() {
             subGroup.add("Item " + i++);
         }
     }));
     
-    webcontainer.root.add(button.create({
+    page3.add(new web.Button({
         text: "Remove",
         click: function() {
-            subAdded.remove();
+            subGroup.remove();
         }
     }));
     
-    webcontainer.root.add(button.create({
+    page3.add(new web.Button({
         text: "Refresh",
         click: st.refresh
     }));
+    
+    /*
+    for (var i=0; i< 100; i++) {
+        var c = new web.Collapsible({title: "Item " + i});
+        c.add("This is just some text to be there so that it is bigger");
+        web.root.add(c);
+    }
+    */
 };
