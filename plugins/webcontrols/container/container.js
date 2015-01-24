@@ -1,6 +1,6 @@
 var self = module.exports = function(util, dot, $pluginDir) {
     var defaultTemplate = util.lazyTemplate("container.html", $pluginDir);
-    var defaultScriptTemplate = util.lazyTemplate("container.script.html", $pluginDir);
+    var scriptTemplate = util.lazyTemplate("container.script.html", $pluginDir);
     
     var containers = [];
     var idutil = 0;
@@ -33,14 +33,13 @@ var self = module.exports = function(util, dot, $pluginDir) {
             return undefined;
         };
         
-        web.Container = function(template, scriptTemplate) {
+        web.Container = function(template) {
             var tf = getTemplateGenerator(template, defaultTemplate);
-            var sf = getTemplateGenerator(scriptTemplate, defaultScriptTemplate);
             
             var container = {
                 items: [],
                 attrib: function () { return "data-cid='" + container.id + "'"; },
-                html: function () { return tf.value()(container) + sf.value()(container); },
+                html: function () { return tf.value()(container) + scriptTemplate.value()(container); },
                 onremove: function () {
                     var index = containers.indexOf(container);
                     if (index > -1)

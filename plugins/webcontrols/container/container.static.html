@@ -12,16 +12,17 @@ socket.on("ct_upd", function (arg) {
 	});
 });
 
-function cLoad(ids) {
-    ids.forEach(function (id) {
-        var element = $("[data-static-id="+id+"]");
-        element.remove();
-
-        var parentid = element.attr("data-static-parent");
-        var parent = $("["+parentid+"]");
-        var order = element.attr("data-static-order");
-        
-        addContainerChild(parent, element.text(), {
+function cLoad(tmpParentId) {
+    var tparent = $("#"+tmpParentId);
+    tparent.remove();
+    var parentid = tparent.attr("data-sparent");
+    var parent = $("["+parentid+"]");
+    
+    tparent.children("div").each(function () {    
+        var child = $(this);
+        var id = child.attr("data-sid");
+        var order = child.attr("data-sorder");
+        addContainerChild(parent, child.text(), {
             id: id,
             order: order
         });

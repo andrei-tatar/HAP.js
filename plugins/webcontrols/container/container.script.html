@@ -8,13 +8,14 @@ function escapeHTML (unsafe_str) {
       .replace(/\'/g, '&#39;');
 }
 }}
+<div id="p{{=it.id}}" data-sparent="{{=it.attrib()}}">
 {{for (var i=0; i<it.items.length;i++) { var item = it.items[i]; }}
-<div data-static-id="{{=item.id}}" 
-     data-static-parent="{{=it.attrib()}}"
-     data-static-order="{{=item.order}}">
+<div data-sid="{{=item.id}}"
+     data-sorder="{{=item.order}}">
 {{=escapeHTML(item.html())}}
 </div>
 {{ } }}
 <script>
-cLoad([{{=it.items.map(function(r){return r.id})}}]);
+cLoad('p{{=it.id}}');
 </script>
+</div>
