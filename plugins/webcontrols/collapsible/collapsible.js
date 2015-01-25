@@ -5,6 +5,7 @@ var self = module.exports = function(util, $pluginDir) {
         web.Collapsible = function(opt) {
             var collapsible = new web.Container(template);
             collapsible.title = opt.title;
+            collapsible.collapsed = opt.collapsed;
             return collapsible;
         };
     };

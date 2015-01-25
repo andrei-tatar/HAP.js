@@ -1,12 +1,12 @@
 <div class="panel panel-default">
 	<div class="panel-heading" role="tab" id="heading{{=it.id}}">
 		<h4 class="panel-title">
-			<a data-toggle="collapse" data-parent="#accordion" href="#collapse{{=it.id}}" aria-expanded="true" aria-controls="collapseOne">
+			<a data-toggle="collapse" data-parent="#accordion" href="#collapse{{=it.id}}" {{?it.collapsed}}class="collapsed"{{?}}>
 				{{=it.title}}
 			</a>
 		</h4>
 	</div>
-	<div id="collapse{{=it.id}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{=it.id}}">
+	<div id="collapse{{=it.id}}" class="panel-collapse collapse {{?!it.collapsed}}in{{?}}" role="tabpanel" aria-labelledby="heading{{=it.id}}">
 		<div class="panel-body" {{=it.attrib()}}>
 			
 		</div>
