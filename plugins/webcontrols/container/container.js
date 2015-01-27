@@ -1,4 +1,4 @@
-var self = module.exports = function(util, dot, $pluginDir) {
+var self = module.exports = function(util, dot, $pluginDir, express, path) {
     var defaultTemplate = util.lazyTemplate("container.html", $pluginDir);
     var scriptTemplate = util.lazyTemplate("container.script.html", $pluginDir);
     
@@ -33,53 +33,51 @@ var self = module.exports = function(util, dot, $pluginDir) {
             return undefined;
         };
         
-        web.Container = function(template) {
+        web.Container = function(template, base) {
             var tf = getTemplateGenerator(template, defaultTemplate);
-            
-            var container = {
-                items: [],
-                attrib: function () { return "data-cid='" + container.id + "'"; },
-                html: function () { return tf.value()(container) + scriptTemplate.value()(container); },
-                onremove: function () {
-                    var index = containers.indexOf(container);
-                    if (index > -1)
-                        containers.splice(index, 1);
-                },
-                add: function (child) {
-                    if (child.parent)
-                        throw "Child already has a parent";
-                    
-                    if (typeof child === "string") {
-                        var aux = child;
-                        child = { html: function() { return aux; } };
-                    } else if (typeof child.html === "string") {
-                        var aux = child.html;
-                        child.html = function() { return aux; };
-                    }
-                    if (!child.order) child.order = 0;
-                    
-                    var id = idutil++;
-                    child.id = id;
-                    child.parent = container;
-                    container.items.push(child);
-                    var simplified = simplifyContainerChild(child);
+            var container = base || {};
+            container.items = [];
+            container.attrib = function () { return "data-cid='" + container.id + "'"; };
+            container.html = function () { return tf.value()(container) + scriptTemplate.value()(container); };
+            container.onremove = function () {
+                var index = containers.indexOf(container);
+                if (index > -1)
+                    containers.splice(index, 1);
+            };
+            container.add = function (child) {
+                if (child.parent)
+                    throw "Child already has a parent";
+                
+                if (typeof child === "string") {
+                    var aux = child;
+                    child = { html: function() { return aux; } };
+                } else if (typeof child.html === "string") {
+                    var aux = child.html;
+                    child.html = function() { return aux; };
+                }
+                if (!child.order) child.order = 0;
+                
+                var id = idutil++;
+                child.id = id;
+                child.parent = container;
+                container.items.push(child);
+                var simplified = simplifyContainerChild(child);
+                web.emit("ct_upd", {id: container.id, attrib: container.attrib(), child: simplified});
+                
+                child.refresh = function() {
                     web.emit("ct_upd", {id: container.id, attrib: container.attrib(), child: simplified});
+                };
                     
-                    child.refresh = function() {
-                        web.emit("ct_upd", {id: container.id, attrib: container.attrib(), child: simplified});
-                    };
-                        
-                    child.remove = function() {
-                        if (child.onremove) child.onremove();
-                        
-                        container.items.remove(child);
-                        delete child.parent;
-                        delete child.remove;
-                        delete child.refresh;
-                        
-                        web.emit("ct_rm", id);
-                    };
-                },
+                child.remove = function() {
+                    if (child.onremove) child.onremove();
+                    
+                    container.items.remove(child);
+                    delete child.parent;
+                    delete child.remove;
+                    delete child.refresh;
+                    
+                    web.emit("ct_rm", id);
+                };
             };
             
             containers.push(container);
@@ -116,7 +114,9 @@ var self = module.exports = function(util, dot, $pluginDir) {
         
         web.root = new web.Container();
         web.root.id = idutil++;
-        web.append(util.readFile("container.static.html", $pluginDir));
+        web.app.use(express.static(path.join($pluginDir, '.static')));
+        web.append("<script src='js/container.js'></script>");
+        
         web.app.get("/rootcontainer", function (req, res) {
             res.send(web.root.html());
         });

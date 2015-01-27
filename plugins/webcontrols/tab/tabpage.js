@@ -3,9 +3,7 @@ var self = module.exports = function(util, $pluginDir) {
     
     this.init = function (web) {
         web.TabPage = function (opt) {
-            var page = new web.Container(template);
-            page.title = opt.title;
-            return page;
+            return new web.Container(template, opt);
         };
     }
 };

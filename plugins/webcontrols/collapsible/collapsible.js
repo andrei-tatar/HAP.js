@@ -3,10 +3,7 @@ var self = module.exports = function(util, $pluginDir) {
     
     this.init = function (web) {
         web.Collapsible = function(opt) {
-            var collapsible = new web.Container(template);
-            collapsible.title = opt.title;
-            collapsible.collapsed = opt.collapsed;
-            return collapsible;
+            return new web.Container(template, opt);
         };
     };
 };

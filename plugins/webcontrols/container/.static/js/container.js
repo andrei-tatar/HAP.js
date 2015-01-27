@@ -1,4 +1,3 @@
-<script>
 socket.on("ct_rm", function (id) {
 	$("[data-ownedby='"+id+"']").remove();
     $("[data-id='"+id+"']").remove();
@@ -68,9 +67,4 @@ function addContainerChild(rootElement, html, child) {
 	rootElement.append(element);
 };
 
-$.ajax({
-	url: "/rootcontainer"
-}).done(function (data) {
-	$("body").append(data);
-});
-</script>
+$.ajax({url: "/rootcontainer"}).done(function (data) {$("body").append(data);});

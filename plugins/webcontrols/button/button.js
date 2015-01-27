@@ -1,16 +1,12 @@
-var self = module.exports = function(util, $pluginDir) {
+var self = module.exports = function(util, $pluginDir, express, path) {
     var template = util.lazyTemplate("button.html", $pluginDir);
     
     this.init = function (web) {
-        web.Button = function(opt) {
-            var button = {
-                html: function () {
-                    return template.value()(button);
-                }
+        web.Button = function(button) {
+            button = button || {};
+            button.html = function () {
+                return template.value()(button);
             };
-            for (var key in opt) {
-                button[key] = opt[key];
-            }
             return button;
         };
         
@@ -20,7 +16,8 @@ var self = module.exports = function(util, $pluginDir) {
                 button.click();
         });
         
-        web.append(util.readFile("button.static.html", $pluginDir));
+        web.app.use(express.static(path.join($pluginDir, '.static')));
+        web.append("<script src='js/button.js'></script>");
     }
 };
 self.__meta = {
