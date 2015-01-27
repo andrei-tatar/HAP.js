@@ -144,11 +144,9 @@ function composePlugins(paths, onError, onDone, recursive, debug) {
                 try {    
                     if (tryCreatePlugin(plugin)) {
                         unresolved.splice(i, 1);
-                        i--;
                         anyResolved = true;
-                        if (debug)
-                            result = "Resolved!";
-                        continue;
+                        if (debug) result = "Resolved!";
+                        break;
                     }
                     if (debug)
                         result = "Missing " + plugin.__missing;
