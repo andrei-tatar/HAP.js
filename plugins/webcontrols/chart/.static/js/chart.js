@@ -1,5 +1,6 @@
 function chLoad(canvasId) {
-    var ctx = $("#"+canvasId)[0].getContext('2d');
+    var ctx = $("#chr"+canvasId)[0].getContext('2d');
+    $("#chrr"+canvasId).remove();
     
     var data = {
         labels: ["January", "February", "March", "April", "May", "June", "July"],

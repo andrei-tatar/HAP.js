@@ -1,4 +1,4 @@
-var self = module.exports = function(preferences, log, express, watcher, util, components, pluginDir, path) {
+var self = module.exports = function(preferences, log, express, watcher, util, components, pluginDir) {
     var template = util.lazyTemplate("index.html", pluginDir);
     
     if (!preferences.web) {
@@ -10,7 +10,7 @@ var self = module.exports = function(preferences, log, express, watcher, util, c
     var compression = require('compression');
     var app = express();
     app.use(compression());
-    app.use(express.static(path.join(pluginDir, '.public')));
+    app.use(express.static(require("path").join(pluginDir, '.public')));
     
     log.v("Starting web server");
     var http = require('http').Server(app);
@@ -33,11 +33,11 @@ var self = module.exports = function(preferences, log, express, watcher, util, c
     var config = [];
     
     io.on('connection', function(socket){
-        log.v('user connected - ' + socket.id);
+        //log.v('user connected - ' + socket.id);
         config.forEach(function (cfg) {
             socket.on(cfg.f, cfg.c);
         });
-        socket.on('disconnect', function(){log.v('user disconnected - ' + socket.id);});
+        //socket.on('disconnect', function(){log.v('user disconnected - ' + socket.id);});
     });
 
     this.app = app;

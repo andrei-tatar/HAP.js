@@ -1,4 +1,6 @@
-var self = module.exports = function(fs, path, dot) {
+var self = module.exports = function(fs, dot) {
+    var path = require("path");
+    
     this.throttle = function(timeout, callback) {
         var timer = undefined;
         
@@ -37,6 +39,16 @@ var self = module.exports = function(fs, path, dot) {
     this.isFunction = function (functionToCheck) {
         var getType = {};
         return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+    };
+    
+    this.createProperty = function (obj, name, initialValue) {
+        var value = initialValue;
+        obj.__defineGetter__(name, function(){return value;});
+        obj.__defineSetter__(name, function(arg) {
+            if (value === arg) return;
+            value = arg;
+            this.emit(name, value);
+        });
     };
     
     Array.prototype.find = function (check) {

@@ -9,7 +9,9 @@ function escapeHTML (unsafe_str) {
 }
 }}
 <div id="p{{=it.id}}" data-sparent="{{=it.attrib()}}">
-{{for (var i=0; i<it.items.length;i++) { var item = it.items[i]; }}
+{{var items = it.items.slice();
+items.sort(function(a,b){return a.order-b.order;});
+for (var i=0; i<items.length;i++) { var item = items[i]; }}
 <div data-sid="{{=item.id}}"
      data-sorder="{{=item.order}}">
 {{=escapeHTML(item.html())}}

@@ -1,4 +1,4 @@
-var self = module.exports = function(util, dot, $pluginDir, express, path) {
+var self = module.exports = function(util, dot, $pluginDir, express) {
     var defaultTemplate = util.lazyTemplate("container.html", $pluginDir);
     var scriptTemplate = util.lazyTemplate("container.script.html", $pluginDir);
     
@@ -21,6 +21,18 @@ var self = module.exports = function(util, dot, $pluginDir, express, path) {
         return lazydefault;
     };
     
+    var getstyle = function(css) {
+        var ret = "";
+        for (var key in css) {
+            var value = css[key];
+            if (value)
+                ret += key+":"+value+";";
+        }
+        if (ret.length > 0)
+            ret = "style=\""+ret+"\"";
+        return ret;
+    };
+    
     this.order = -1;
     
     this.init = function (web) {
@@ -33,17 +45,16 @@ var self = module.exports = function(util, dot, $pluginDir, express, path) {
             return undefined;
         };
         
-        web.Container = function(template, base) {
+        web.Container = function(template) {
             var tf = getTemplateGenerator(template, defaultTemplate);
-            var container = base || {};
+            var container = this;
             container.items = [];
             container.attrib = function () { return "data-cid='" + container.id + "'"; };
             container.html = function () { return tf.value()(container) + scriptTemplate.value()(container); };
-            container.onremove = function () {
+            container.on("remove", function () {
                 var index = containers.indexOf(container);
-                if (index > -1)
-                    containers.splice(index, 1);
-            };
+                if (index > -1) containers.splice(index, 1);
+            });
             container.add = function (child) {
                 if (child.parent)
                     throw "Child already has a parent";
@@ -67,9 +78,12 @@ var self = module.exports = function(util, dot, $pluginDir, express, path) {
                 child.refresh = function() {
                     web.emit("ct_upd", {id: container.id, attrib: container.attrib(), child: simplified});
                 };
+                if (!child.css) child.css = {};
+                child.getstyle = getstyle.bind(this, child.css);
                     
                 child.remove = function() {
-                    if (child.onremove) child.onremove();
+                    child.emit("remove");
+                    child.removeAllListeners();
                     
                     container.items.remove(child);
                     delete child.parent;
@@ -81,8 +95,9 @@ var self = module.exports = function(util, dot, $pluginDir, express, path) {
             };
             
             containers.push(container);
-            return container;
         };
+        
+        require("util").inherits(web.Container, require("events").EventEmitter);
 
         web.app.get("/container/items/:id", function (req, res) {
             var cid = req.params.id;
@@ -113,8 +128,10 @@ var self = module.exports = function(util, dot, $pluginDir, express, path) {
         });
         
         web.root = new web.Container();
+        web.root.css = {};
+        web.root.getstyle = getstyle.bind(this, web.root.css);
         web.root.id = idutil++;
-        web.app.use(express.static(path.join($pluginDir, '.static')));
+        web.app.use(express.static(require("path").join($pluginDir, '.static')));
         web.append("<script src='js/container.js'></script>");
         
         web.app.get("/rootcontainer", function (req, res) {

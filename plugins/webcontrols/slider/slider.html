@@ -1,5 +1,4 @@
-<input id="sl{{=it.id}}" data-slider-id="slo{{=it.id}}" type="text" data-slider-min="{{=it.min||0}}" data-slider-max="{{=it.max||100}}" data-slider-step="{{=it.step||1}}" data-slider-value="{{=it.value||0}}"/>
-<script>
-$('#sl{{=it.id}}').slider();
-$("#slo{{=it.id}}").attr("data-ownedby", '{{=it.id}}');
-</script>
+<div {{=it.getstyle()}}>
+<input id="sl{{=it.id}}" type="text" data-slider-min="{{=it.min||0}}" data-slider-max="{{=it.max||100}}" data-slider-step="{{=it.step||1}}" data-slider-value="{{=it.value||0}}"/>
+<script id="slr{{=it.id}}">loadSl('{{=it.id}}');</script>
+</div>

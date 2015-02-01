@@ -1,1 +1,1 @@
-<button onclick="btclick('{{=it.id}}')" type="button" class="btn btn-default">{{=it.text}}</button>
+<button id="bt{{=it.id}}" {{=it.getstyle()}} onclick="btclick('{{=it.id}}')" type="button" class="btn btn-default" {{?!it.enabled}}disabled{{?}}>{{=it.text}}</button>

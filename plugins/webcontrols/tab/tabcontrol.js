@@ -5,8 +5,12 @@ var self = module.exports = function(util, $pluginDir) {
     var tabPagesTemplate = util.lazyTemplate("tabpages.html", $pluginDir);
     
     this.init = function(web) {
-        web.TabControl = function() {
+        web.TabControl = function(opt) {
+            opt = opt || {};
+            
             var tabcontrol = new web.Container(tabControlTemplate);
+            tabcontrol.order = opt.order;
+            
             var tabheaders = new web.Container(tabHeadersTemplate);
             tabcontrol.add(tabheaders);
             var tabpages = new web.Container(tabPagesTemplate);
@@ -15,6 +19,7 @@ var self = module.exports = function(util, $pluginDir) {
             tabcontrol.add = function (child) {
                 tabpages.add(child);
                 var header = {
+                    order: child.order,
                     html: function () {
                         return headerTemplate.value()(child);
                     }

@@ -1,20 +1,23 @@
-var self = module.exports = function(util, $pluginDir, path, express) {
+var self = module.exports = function(util, $pluginDir, express) {
     var template = util.lazyTemplate("chart.html", $pluginDir);
     
     this.init = function (web) {
-        web.Chart = function(chart) {
-            chart = chart || {};
-            chart.html = function () {
-                return template.value()(chart);
+        web.Chart = function(opt) {
+            opt = opt || {};
+            
+            this.order = opt.order;
+            this.html = function () {
+                return template.value()(this);
             };
-            return chart;
         };
+        
+        require("util").inherits(web.Chart, require("events").EventEmitter);
         
         web.app.get("/chart/:id", function (req, res) {
             console.log(req.params.id);
         });
         
-        web.app.use(express.static(path.join($pluginDir, '.static')));
+        web.app.use(express.static(require("path").join($pluginDir, '.static')));
         web.append("<script src='js/chart.min.js'></script>");
         web.append("<script src='js/chart.js'></script>");
     };

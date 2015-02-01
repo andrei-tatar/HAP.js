@@ -1,0 +1,6 @@
+<div class="alert alert-{{=it.type}} {{?it.dismissible}}alert-dismissible{{?}}" role="alert" {{=it.getstyle()}}>
+  {{?it.dismissible}}
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+  {{?}}
+  <strong>{{=it.title}}</strong> {{=it.message}}
+</div>
