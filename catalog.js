@@ -194,25 +194,17 @@ function composePlugins(paths, onError, onDone, recursive, debug) {
                 if (path.extname(file).toLowerCase() != ".js")
                     continue;
                 
-                try {
-                    var plugin = require(fullPath);
-                    if (!isFunction(plugin)) {
-                        if (debug)
-                            console.log("Ignoring not function plugin " + file);
-                        continue;
-                    }
+                var plugin = require(fullPath);
+                if (!isFunction(plugin)) {
+                    if (debug)
+                        console.log("Ignoring not function plugin " + file);
+                    continue;
+                }
 
-                    plugin.__dir = dir;
-                    plugin.__path = fullPath;
-                    plugin.__name = file;
-                    unresolved.push(plugin);
-                }
-                catch (err) {
-                    if (debug) {
-                        console.log("Error loading " + file);
-                        console.log(err);
-                    }
-                }
+                plugin.__dir = dir;
+                plugin.__path = fullPath;
+                plugin.__name = file;
+                unresolved.push(plugin);
             }
             onDirComplete();
         });

@@ -10,6 +10,7 @@ catalog.inject("preferencesPath", "prefs.json");
 catalog.inject("fs", require("fs"));
 catalog.inject("dot", require("dot"));
 catalog.inject("express", require("express"));
+catalog.inject("catalog", catalog);
 catalog.compose({
     //debug: true,
     error: function (missingDeps) {
