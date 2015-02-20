@@ -12,15 +12,6 @@ var self = module.exports = function(util, dot, $pluginDir, express) {
         };
     };
     
-    var getTemplateGenerator = function(tmp, lazydefault) {
-        if (tmp) {
-            if (util.isFunction(tmp)) return { value: tmp };
-            if (tmp.value && util.isFunction(tmp.value)) return tmp;
-            return util.lazy(function(){return dot.template(tmp);});
-        }
-        return lazydefault;
-    };
-    
     var getstyle = function(css) {
         var ret = "";
         for (var key in css) {
@@ -33,12 +24,12 @@ var self = module.exports = function(util, dot, $pluginDir, express) {
         return ret;
     };
     
-    this.order = -1;
+    this.order = -1000;
     
     this.init = function (web) {
-        web.findControl = function (id) {
+        web.findControl = function (id, req) {
             for (var i=0; i<containers.length; i++) {
-                var item = containers[i].items.find(function(it){return it.id==id;});
+                var item = containers[i].filterItems(req).first(function(it){return it.id==id;});
                 if (item) return item;
             }
             
@@ -46,15 +37,22 @@ var self = module.exports = function(util, dot, $pluginDir, express) {
         };
         
         web.Container = function(template) {
-            var tf = getTemplateGenerator(template, defaultTemplate);
+            var tf = template || defaultTemplate;
             var container = this;
-            container.items = [];
+            var containeritems = [];
             container.attrib = function () { return "data-cid='" + container.id + "'"; };
-            container.html = function () { return tf.value()(container) + scriptTemplate.value()(container); };
+            container.html = function (req) { 
+                return tf.value()(container) + scriptTemplate.value()({
+                    container: container, request: req
+                }); 
+            };
             container.on("remove", function () {
                 var index = containers.indexOf(container);
                 if (index > -1) containers.splice(index, 1);
             });
+            container.filterItems = function (req) {
+                return containeritems;
+            };
             container.add = function (child) {
                 if (child.parent)
                     throw "Child already has a parent";
@@ -71,12 +69,12 @@ var self = module.exports = function(util, dot, $pluginDir, express) {
                 var id = idutil++;
                 child.id = id;
                 child.parent = container;
-                container.items.push(child);
+                containeritems.push(child);
                 var simplified = simplifyContainerChild(child);
-                web.emit("ct_upd", {id: container.id, attrib: container.attrib(), child: simplified});
+                web.emit("ct_upd", {attrib: container.attrib(), child: simplified});
                 
                 child.refresh = function() {
-                    web.emit("ct_upd", {id: container.id, attrib: container.attrib(), child: simplified});
+                    web.emit("ct_upd", {attrib: container.attrib(), child: simplified});
                 };
                 if (!child.css) child.css = {};
                 child.getstyle = getstyle.bind(this, child.css);
@@ -85,13 +83,15 @@ var self = module.exports = function(util, dot, $pluginDir, express) {
                     child.emit("remove");
                     child.removeAllListeners();
                     
-                    container.items.remove(child);
+                    containeritems.remove(child);
                     delete child.parent;
                     delete child.remove;
                     delete child.refresh;
                     
                     web.emit("ct_rm", id);
                 };
+                
+                return child;
             };
             
             containers.push(container);
@@ -99,32 +99,13 @@ var self = module.exports = function(util, dot, $pluginDir, express) {
         
         require("util").inherits(web.Container, require("events").EventEmitter);
 
-        web.app.get("/container/items/:id", function (req, res) {
-            var cid = req.params.id;
-            for (var i=0; i<containers.length; i++) {
-                var c = containers[i];
-                if (c.id == cid) {
-                    res.send(c.items.map(simplifyContainerChild));
-                    return;
-                }
+        web.app.get("/container/render/:id", function (req, res) {
+            var child = web.findControl(req.params.id, req);
+            if (child) {
+                res.send(child.html(req));
+                return;
             }
-            
-            res.send([]);
-        });
-        
-        web.app.get("/container/render/:id/:subid", function (req, res) {
-            for (var i=0; i<containers.length; i++) {
-                var c = containers[i];
-                if (c.id == req.params.id) {
-                    var child = c.items.find(function(c){return c.id==req.params.subid;});
-                    if (child) {
-                        res.send(child.html());
-                        return;
-                    }
-                }
-            }
-            
-            res.send("Child not found!");
+            res.status(404).send('Not found');
         });
         
         web.root = new web.Container();
@@ -135,7 +116,7 @@ var self = module.exports = function(util, dot, $pluginDir, express) {
         web.append("<script src='js/container.js'></script>");
         
         web.app.get("/rootcontainer", function (req, res) {
-            res.send(web.root.html());
+            res.send(web.root.html(req));
         });
     };
 };

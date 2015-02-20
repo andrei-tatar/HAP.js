@@ -28,7 +28,7 @@ var self = module.exports = function(util, $pluginDir, express) {
         require("util").inherits(web.Button, require("events").EventEmitter);
         
         web.on("bt_clk", function (id) {
-            var button = web.findControl(id, true);
+            var button = web.findControl(id);
             if (button && button.enabled) button.emit("click");
         });
         

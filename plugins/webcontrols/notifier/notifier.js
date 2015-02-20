@@ -29,7 +29,7 @@ var self = module.exports = function(util, $pluginDir, express) {
                     }, m.timeout, m);
                 }
                 
-                oldAdd(notification);
+                return oldAdd(notification);
             };
             
             notifier.success = function (not) {

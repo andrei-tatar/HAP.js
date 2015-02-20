@@ -51,10 +51,10 @@ var self = module.exports = function(fs, dot) {
         });
     };
     
-    Array.prototype.find = function (check) {
+    Array.prototype.first = function (check) {
         for (var i=0; i<this.length; i++) {
             var item = this[i];
-            if (check(item))
+            if (!check || check(item))
                 return item;
         }
     };

@@ -8,16 +8,16 @@ function escapeHTML (unsafe_str) {
       .replace(/\'/g, '&#39;');
 }
 }}
-<div id="p{{=it.id}}" data-sparent="{{=it.attrib()}}">
-{{var items = it.items.slice();
+<div id="p{{=it.container.id}}" data-sparent="{{=it.container.attrib()}}">
+{{var items = it.container.filterItems(it.request).slice();
 items.sort(function(a,b){return a.order-b.order;});
 for (var i=0; i<items.length;i++) { var item = items[i]; }}
 <div data-sid="{{=item.id}}"
      data-sorder="{{=item.order}}">
-{{=escapeHTML(item.html())}}
+{{=escapeHTML(item.html(it.request))}}
 </div>
 {{ } }}
 <script>
-cLoad('p{{=it.id}}');
+cLoad('p{{=it.container.id}}');
 </script>
 </div>

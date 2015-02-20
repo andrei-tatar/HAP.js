@@ -1,1 +1,1 @@
-npm install compression dot esprima express nodemon socket.io
+npm install compression dot esprima express express-session nodemon socket.io passport passport-local body-parser

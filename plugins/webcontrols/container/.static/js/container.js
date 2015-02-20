@@ -5,7 +5,7 @@ socket.on("ct_rm", function (id) {
 
 socket.on("ct_upd", function (arg) {
     $.ajax({
-		url: "/container/render/" + arg.id + "/" + arg.child.id,
+		url: "/container/render/" + arg.child.id,
 	}).done(function (html) {
 		addContainerChild($("["+arg.attrib+"]"), html, arg.child);
 	});

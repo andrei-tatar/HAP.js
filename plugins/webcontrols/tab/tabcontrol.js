@@ -17,7 +17,7 @@ var self = module.exports = function(util, $pluginDir) {
             tabcontrol.add(tabpages);
             
             tabcontrol.add = function (child) {
-                tabpages.add(child);
+                var added = tabpages.add(child);
                 var header = {
                     order: child.order,
                     html: function () {
@@ -37,6 +37,7 @@ var self = module.exports = function(util, $pluginDir) {
                     oldremove();
                     header.remove();
                 };
+                return added;
             };
             
             return tabcontrol;
