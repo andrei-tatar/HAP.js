@@ -19,7 +19,13 @@ var self = module.exports = function(fs, log, path, saveTimeout, watcher, util) 
     }.bind(this);
 
     var save = function() {
-        var data = JSON.stringify(this, null, 4);
+        var clone = {};
+        var ignore = ["__exports", "__dir", "__path", "__name"];
+        for (var k in this) {
+            if (ignore.indexOf(k) == -1)
+                clone[k] = this[k];
+        }
+        var data = JSON.stringify(clone, null, 4);
         fs.writeFile(path, data, function (e) {
             if (e) {
                 log.e("Could not save preferences", e);
@@ -30,7 +36,7 @@ var self = module.exports = function(fs, log, path, saveTimeout, watcher, util) 
     }.bind(this);
     
     load();
-    
+
     watcher.create(this, util.throttle(saveTimeout, save));
 };
 self.__meta = {

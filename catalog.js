@@ -37,7 +37,7 @@ function resolveDependency(name, plugin) {
     else
         val = dependencies;
     return { value: val, required: required };
-};
+}
 
 function resolveDependencies(names, plugin) {
     if (typeof names == "string")
@@ -57,13 +57,7 @@ function resolveDependencies(names, plugin) {
         args.push(dep.value);
     }
     return { params: args, missing: missing };
-};
-
-function applyToConstructor(constructor, argArray) {
-    var args = [null].concat(argArray);
-    var factoryFunction = constructor.bind.apply(constructor, args);
-    return new factoryFunction();
-};
+}
 
 function getImports(plugin) {
     if (plugin.__imports)
@@ -77,7 +71,7 @@ function getImports(plugin) {
     
     plugin.__imports = typeof imp == "string" ? [imp] : imp;
     return plugin.__imports;
-};
+}
 
 function tryCreatePlugin(plugin) {
     if (!plugin.bind) return true;
@@ -87,24 +81,26 @@ function tryCreatePlugin(plugin) {
 
     var dep = resolveDependencies(imports, plugin);
     if (dep.missing.length == 0) {
-        var instance = applyToConstructor(plugin, dep.params);
-        addExport(exported, meta.exports, instance);
-        instance.__dir = plugin.__dir;
-        instance.__path = plugin.__path;
-        instance.__name = plugin.__name;
+        var instance = {
+            __dir: plugin.__dir,
+            __path: plugin.__path,
+            __name: plugin.__name
+        };
+        if (typeof meta.exports === "string")
+            instance.__exports = meta.exports;
+
+        instance = plugin.bind.apply(plugin, [instance].concat(dep.params))() || instance;
+
+        if (typeof meta.exports === "string")
+            exported.push({ key: meta.exports, value: instance });
+
         return true;
     } else {
         plugin.__missing = dep.missing;
     }
 
     return false;
-};
-
-function addExport(where, name, plugin) {
-    if (!name || !name.length || name.length == 0) return;
-    plugin.__exports = name;
-    where.push({ key: name, value: plugin });
-};
+}
 
 function isFunction(functionToCheck) {
     var getType = {};
@@ -172,7 +168,7 @@ function composePlugins(paths, onError, onDone, recursive, debug) {
         }
         
         onDone();
-    };
+    }
 
     var loadFromDir = function (dir) {
         dirCount++;
@@ -211,7 +207,7 @@ function composePlugins(paths, onError, onDone, recursive, debug) {
     };
 
     paths.forEach(loadFromDir);
-};
+}
 
 module.exports = function (paths, recursive) {
     this.resolve = function (name) {
@@ -219,7 +215,7 @@ module.exports = function (paths, recursive) {
     };
 
     this.inject = function (name, plugin) {
-        addExport(manualinjected, name, plugin);
+        manualinjected.push({ key: name, value: plugin });
     };
 
     this.compose = function (options) {

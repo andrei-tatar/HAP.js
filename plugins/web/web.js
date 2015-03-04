@@ -62,7 +62,7 @@ var self = module.exports = function(preferences, log, express, watcher, util, c
     var io = require('socket.io')(http);
     
     http.listen(preferences.web.port, function(){
-        log.i('Listening...');
+        log.i('[Web Interface]Listening...');
     });
     
     var staticContent = "";
