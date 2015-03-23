@@ -1,5 +1,5 @@
 var self = module.exports = function(util, $pluginDir) {
-    var template = util.lazyTemplate("tabpage.html", $pluginDir);
+    var template = new util.LazyTemplate("tabpage.html", $pluginDir);
     
     this.init = function (web) {
         web.TabPage = function (opt) {

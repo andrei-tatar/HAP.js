@@ -1,8 +1,8 @@
 var self = module.exports = function(util, $pluginDir) {
-    var headerTemplate = util.lazyTemplate("tabheader.html", $pluginDir); 
-    var tabControlTemplate = util.lazyTemplate("tabcontrol.html", $pluginDir);
-    var tabHeadersTemplate = util.lazyTemplate("tabheaders.html", $pluginDir);
-    var tabPagesTemplate = util.lazyTemplate("tabpages.html", $pluginDir);
+    var headerTemplate = new util.LazyTemplate("tabheader.html", $pluginDir);
+    var tabControlTemplate = new util.LazyTemplate("tabcontrol.html", $pluginDir);
+    var tabHeadersTemplate = new util.LazyTemplate("tabheaders.html", $pluginDir);
+    var tabPagesTemplate = new util.LazyTemplate("tabpages.html", $pluginDir);
     
     this.init = function(web) {
         web.TabControl = function(opt) {
@@ -21,7 +21,7 @@ var self = module.exports = function(util, $pluginDir) {
                 var header = {
                     order: child.order,
                     html: function () {
-                        return headerTemplate.value()(child);
+                        return headerTemplate.value(child);
                     }
                 };
                 tabheaders.add(header);

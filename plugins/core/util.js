@@ -18,22 +18,18 @@ var self = module.exports = function(fs, dot) {
         return dot.template(fs.readFileSync(path.join(dir, name)));
     };
     
-    this.lazy = function (generator) {
+    this.Lazy = function (generator) {
         var v = undefined;
-        return {
-            value: function() {
-                return v || (v = generator());
-            }
-        };
+        this.__defineGetter__("value", function(){
+            return v || (v = generator());
+        });
     };
     
-    this.lazyTemplate = function(name, dir) {
+    this.LazyTemplate = function(name, dir) {
         var v = undefined;
-        return {
-            value: function() {
-                return v || (v = dot.template(fs.readFileSync(path.join(dir, name))));
-            }
-        };
+        this.__defineGetter__("value", function(){
+            return v || (v = dot.template(fs.readFileSync(path.join(dir, name))));
+        });
     };
     
     this.isFunction = function (functionToCheck) {

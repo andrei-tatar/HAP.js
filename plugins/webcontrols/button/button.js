@@ -1,5 +1,5 @@
 var self = module.exports = function(util, $pluginDir, express) {
-    var template = util.lazyTemplate("button.html", $pluginDir);
+    var template = new util.LazyTemplate("button.html", $pluginDir);
     
     this.init = function (web) {
         web.Button = function(opt) {
@@ -21,7 +21,7 @@ var self = module.exports = function(util, $pluginDir, express) {
             });
             
             this.html = function () {
-                return template.value()(this);
+                return template.value(this);
             };
         };
         

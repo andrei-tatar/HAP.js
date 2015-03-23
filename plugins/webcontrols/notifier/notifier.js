@@ -1,9 +1,9 @@
 var self = module.exports = function(util, $pluginDir, express) {
-    var template = util.lazyTemplate("notification.html", $pluginDir);
+    var template = new util.LazyTemplate("notification.html", $pluginDir);
     
     var Notification = function (opt) {
         this.css = { "margin-bottom": "5px" };
-        this.html = function() { return template.value()(this); };
+        this.html = function() { return template.value(this); };
         this.type = opt.type;
         this.message = opt.message;
         this.title = opt.title;

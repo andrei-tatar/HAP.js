@@ -1,5 +1,5 @@
 var self = module.exports = function(util, $pluginDir) {
-    var template = util.lazyTemplate("collapsible.html", $pluginDir);
+    var template = new util.LazyTemplate("collapsible.html", $pluginDir);
     
     this.init = function (web) {
         web.Collapsible = function(opt) {

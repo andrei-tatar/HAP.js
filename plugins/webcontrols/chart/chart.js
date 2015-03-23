@@ -1,5 +1,5 @@
 var self = module.exports = function(util, $pluginDir, express) {
-    var template = util.lazyTemplate("chart.html", $pluginDir);
+    var template = new util.LazyTemplate("chart.html", $pluginDir);
     
     this.init = function (web) {
         web.Chart = function(opt) {
@@ -7,7 +7,7 @@ var self = module.exports = function(util, $pluginDir, express) {
             
             this.order = opt.order;
             this.html = function () {
-                return template.value()(this);
+                return template.value(this);
             };
         };
         

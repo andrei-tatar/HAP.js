@@ -1,5 +1,5 @@
 var self = module.exports = function(preferences, log, express, watcher, util, components, pluginDir) {
-    var template = util.lazyTemplate("index.html", pluginDir);
+    var template = new util.LazyTemplate("index.html", pluginDir);
     
     if (!preferences.web) {
         preferences.web = {
@@ -46,7 +46,7 @@ var self = module.exports = function(preferences, log, express, watcher, util, c
     app.use(session({
         secret: "some secret string?",
         resave: true,
-        saveUninitialized: false,
+        saveUninitialized: false
     }));
     app.use(passport.initialize());
     app.use(passport.session());
@@ -69,7 +69,7 @@ var self = module.exports = function(preferences, log, express, watcher, util, c
     var headContent = "";
    
     app.get("/", function (req, res) {
-        res.send(template.value()({
+        res.send(template.value({
             staticContent: staticContent,
             headContent: headContent
         }));

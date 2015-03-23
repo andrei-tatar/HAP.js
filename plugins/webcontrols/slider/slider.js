@@ -1,5 +1,5 @@
 var self = module.exports = function(util, dot, $pluginDir, express) {
-    var template = util.lazyTemplate("slider.html", $pluginDir);
+    var template = new util.LazyTemplate("slider.html", $pluginDir);
     
     this.init = function (web) {
         web.Slider = function (opt) {
@@ -17,7 +17,7 @@ var self = module.exports = function(util, dot, $pluginDir, express) {
             });
             
             this.html = function () {
-                return template.value()(this);
+                return template.value(this);
             };
         };
         

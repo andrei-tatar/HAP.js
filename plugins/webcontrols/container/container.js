@@ -1,6 +1,6 @@
 var self = module.exports = function(util, dot, $pluginDir, express) {
-    var defaultTemplate = util.lazyTemplate("container.html", $pluginDir);
-    var scriptTemplate = util.lazyTemplate("container.script.html", $pluginDir);
+    var defaultTemplate = new util.LazyTemplate("container.html", $pluginDir);
+    var scriptTemplate = new util.LazyTemplate("container.script.html", $pluginDir);
     
     var containers = [];
     var idutil = 0;
@@ -42,7 +42,7 @@ var self = module.exports = function(util, dot, $pluginDir, express) {
             var containeritems = [];
             container.attrib = function () { return "data-cid='" + container.id + "'"; };
             container.html = function (req) { 
-                return tf.value()(container) + scriptTemplate.value()({
+                return tf.value(container) + scriptTemplate.value({
                     container: container, request: req
                 }); 
             };
