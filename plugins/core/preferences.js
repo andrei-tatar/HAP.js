@@ -40,6 +40,5 @@ var self = module.exports = function(fs, log, path, saveTimeout, watcher, util) 
     watcher.create(this, util.throttle(saveTimeout, save));
 };
 self.__meta = {
-    imports: ["fs", "log", "?preferencesPath", "?preferencesSaveTimeout", "watcher", "util"],
-    exports: "preferences"
+    imports: ["fs", "log", "?preferencesPath", "?preferencesSaveTimeout", "watcher", "util"]
 };

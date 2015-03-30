@@ -86,14 +86,13 @@ function tryCreatePlugin(plugin) {
             __path: plugin.__path,
             __name: plugin.__name
         };
-        if (typeof meta.exports === "string")
-            instance.__exports = meta.exports;
+        if (!(typeof meta.exports === "string"))
+            meta.exports = path.parse(plugin.__name).name;
+        instance.__exports = meta.exports;
 
         instance = plugin.bind.apply(plugin, [instance].concat(dep.params))() || instance;
 
-        if (typeof meta.exports === "string")
-            exported.push({ key: meta.exports, value: instance });
-
+        exported.push({ key: meta.exports, value: instance });
         return true;
     } else {
         plugin.__missing = dep.missing;

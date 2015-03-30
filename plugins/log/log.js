@@ -27,6 +27,5 @@ var self = module.exports = function(writers) {
     };
 };
 self.__meta = {
-    imports: ":logWriter_.*",
-    exports: "log"
+    imports: ':logw_.*'
 };

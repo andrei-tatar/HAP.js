@@ -46,6 +46,3 @@ var self = module.exports = function() {
         return new objectObserver(obj, callback);
     };
 };
-self.__meta = {
-    exports: "watcher"
-};

@@ -105,6 +105,5 @@ var self = module.exports = function(preferences, log, express, watcher, util, c
     });
 };
 self.__meta = {
-    imports: ["preferences", "log", "express", "watcher", "util", ":web_.+", "$pluginDir"],
-    exports: "web"
+    imports: ["preferences", "log", "express", "watcher", "util", ":web_.+", "$pluginDir"]
 };

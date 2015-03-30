@@ -6,6 +6,3 @@ var self = module.exports = function() {
         console.log("[" + timetag + "][" + l.tag + "]" + l.message + ex);
     };
 };
-self.__meta = {
-    exports: "logWriter_console"
-};

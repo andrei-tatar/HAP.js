@@ -1,23 +1,20 @@
-var self = module.exports = function(log, express, preferences, $pluginDir, fs) {
+var self = module.exports = function(log, express, preferences, $pluginDir, fs, plugins) {
     if (!preferences.node) {
         preferences.node = {
-            port: 5111
+            port: 5111,
+            devices: []
         };
     }
     
     var bodyParser = require('body-parser');
     var app = express();
     app.use(bodyParser.json()); 
-  
+
     app.listen(preferences.node.port, function () {
         log.i("[HAP Node]Listening...");
     });
-    
-    app.post('/temperature', function(req, res) {
-        console.log(req.body);
-        res.send("OK");
-    });
-    
+
+    var fs = require('fs');
     var path = require('path');
     
     var getLatestVersion = function(type) {
@@ -29,18 +26,13 @@ var self = module.exports = function(log, express, preferences, $pluginDir, fs) 
         });
         if (dirs.length == 0)
             return undefined;
-        dirs.sort(function (a,b) {
+        dirs.sort(function (a, b) {
             return parseFloat(b) - parseFloat(a);
         });
         return dirs.first();
     };
-    
-    var getClientAddress = function (req) {
-        return (req.headers['x-forwarded-for'] || '').split(',')[0] || req.connection.remoteAddress;
-    };
-    
+
     app.get("/update/latest/:type", function (req, res) {
-        log.v(getClientAddress(req) + " asked what is latest version for " + req.params.type);
         var latest = getLatestVersion(req.params.type);
         if (latest)
             res.send(latest);
@@ -49,7 +41,7 @@ var self = module.exports = function(log, express, preferences, $pluginDir, fs) 
     });
     
     app.get("/update/get/:type/:num", function (req, res) {
-        log.v(getClientAddress(req) + " requested latest version for " + req.params.type);
+        log.v(req.connection.remoteAddress + " requested latest version for " + req.params.type);
         var fwDir = path.join($pluginDir, "fw", req.params.type);
         var latest = getLatestVersion(req.params.type);
         if (latest) {
@@ -61,7 +53,14 @@ var self = module.exports = function(log, express, preferences, $pluginDir, fs) 
         }
         res.status(404).send("Not Found");
     });
+
+    this.app = app;
+    var node = this;
+    plugins.forEach(function (plugin) {
+        log.i("Initializing " + plugin.__exports);
+        plugin.init(node);
+    });
 };
 self.__meta = {
-    exports: "node"
+    imports: ['log', 'express', 'preferences', '$pluginDir', 'fs', ':node_.+']
 };

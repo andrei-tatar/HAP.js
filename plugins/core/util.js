@@ -65,6 +65,3 @@ var self = module.exports = function(fs, dot) {
         return false;
     };
 };
-self.__meta = {
-    exports: "util"
-};

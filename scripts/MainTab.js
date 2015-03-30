@@ -17,6 +17,3 @@ var self = module.exports = function(web, log) {
     
     return control;
 };
-self.__meta = {
-    exports: "MainTab"
-};
