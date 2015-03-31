@@ -1,4 +1,4 @@
-var self = module.exports = function(MainTab, web) {
+module.exports = function(MainTab, web) {
     var page = new web.TabPage({title: "User Container", order: 100});
     MainTab.add(page);
 

@@ -1,4 +1,4 @@
-var self = module.exports = function(util, dot, $pluginDir, express) {
+module.exports = function(util, dot, $pluginDir, express) {
     var defaultTemplate = new util.LazyTemplate("container.html", $pluginDir);
     var scriptTemplate = new util.LazyTemplate("container.script.html", $pluginDir);
     
@@ -119,7 +119,4 @@ var self = module.exports = function(util, dot, $pluginDir, express) {
             res.send(web.root.html(req));
         });
     };
-};
-self.__meta = {
-    exports: "web_container"
 };

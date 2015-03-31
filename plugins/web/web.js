@@ -1,5 +1,5 @@
-var self = module.exports = function(preferences, log, express, watcher, util, components, pluginDir) {
-    var template = new util.LazyTemplate("index.html", pluginDir);
+var self = module.exports = function(components, preferences, log, express, watcher, util, $pluginDir) {
+    var template = new util.LazyTemplate("index.html", $pluginDir);
     
     if (!preferences.web) {
         preferences.web = {
@@ -50,7 +50,7 @@ var self = module.exports = function(preferences, log, express, watcher, util, c
     }));
     app.use(passport.initialize());
     app.use(passport.session());
-    app.use(express.static(require("path").join(pluginDir, '.public')));
+    app.use(express.static(require("path").join($pluginDir, '.public')));
     app.post('/login', passport.authenticate('login', { 
         successRedirect: '/', 
         failureRedirect: '/login', 
@@ -105,5 +105,5 @@ var self = module.exports = function(preferences, log, express, watcher, util, c
     });
 };
 self.__meta = {
-    imports: ["preferences", "log", "express", "watcher", "util", ":web_.+", "$pluginDir"]
+    imports: ':web_.+'
 };

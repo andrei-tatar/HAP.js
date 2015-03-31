@@ -1,4 +1,4 @@
-var self = module.exports = function(util, $pluginDir, express) {
+module.exports = function(util, $pluginDir, express) {
     var template = new util.LazyTemplate("button.html", $pluginDir);
     
     this.init = function (web) {
@@ -35,7 +35,4 @@ var self = module.exports = function(util, $pluginDir, express) {
         web.app.use(express.static(require("path").join($pluginDir, '.static')));
         web.append("<script src='js/button.js'></script>");
     }
-};
-self.__meta = {
-    exports: "web_button"
 };

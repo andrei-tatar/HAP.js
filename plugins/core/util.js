@@ -1,4 +1,4 @@
-var self = module.exports = function(fs, dot) {
+module.exports = function(fs, dot) {
     var path = require("path");
     
     this.throttle = function(timeout, callback) {

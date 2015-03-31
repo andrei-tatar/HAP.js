@@ -1,4 +1,4 @@
-var self = module.exports = function(web, log) {
+module.exports = function(web, log) {
     var control = new web.TabControl();
 
     var top = new web.Container();

@@ -1,4 +1,4 @@
-var self = module.exports = function(util, $pluginDir) {
+module.exports = function(util, $pluginDir) {
     var template = new util.LazyTemplate("collapsible.html", $pluginDir);
     
     this.init = function (web) {
@@ -11,7 +11,4 @@ var self = module.exports = function(util, $pluginDir) {
             return collapsible;
         };
     };
-};
-self.__meta = {
-    exports: "web_collapsible"
 };

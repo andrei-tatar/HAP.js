@@ -1,4 +1,4 @@
-var self = module.exports = function(util, $pluginDir, express) {
+module.exports = function(util, $pluginDir, express) {
     var template = new util.LazyTemplate("chart.html", $pluginDir);
     
     this.init = function (web) {
@@ -21,7 +21,4 @@ var self = module.exports = function(util, $pluginDir, express) {
         web.append("<script src='js/chart.min.js'></script>");
         web.append("<script src='js/chart.js'></script>");
     };
-};
-self.__meta = {
-    exports: "web_chart"
 };

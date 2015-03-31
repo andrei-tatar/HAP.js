@@ -64,12 +64,14 @@ function getImports(plugin) {
         return plugin.__imports;
         
     var imp = (plugin.__meta || {}).imports;
-    if (!imp) {
-        var parsed = esprima.parse("safetyValve = " + plugin.toString())
-        imp = parsed.body[0].expression.right.params.map(function(c){return c.name;});
-    }
-    
-    plugin.__imports = typeof imp == "string" ? [imp] : imp;
+    imp = typeof imp == "string" ? [imp] : (typeof imp === "undefined" || typeof imp.length === "undefined" ? [] : imp);
+
+    var parsed = esprima.parse("safetyValve = " + plugin.toString());
+    var parsed_imp = parsed.body[0].expression.right.params.map(function(c){return c.name;});
+
+    Array.prototype.splice.apply(parsed_imp, [0, imp.length].concat(imp));
+
+    plugin.__imports = parsed_imp;
     return plugin.__imports;
 }
 
@@ -77,7 +79,7 @@ function tryCreatePlugin(plugin) {
     if (!plugin.bind) return true;
 
     var meta = plugin.__meta || {};
-    var imports = getImports(plugin);    
+    var imports = getImports(plugin);
 
     var dep = resolveDependencies(imports, plugin);
     if (dep.missing.length == 0) {
@@ -120,9 +122,12 @@ function composePlugins(paths, onError, onDone, recursive, debug) {
         };
         
         unresolved.sort(function (a,b) {
+            //TODO: sort them based on dependencies not count
             var ia = getImports(a), ib = getImports(b);
-            if (ia.some(resolveLater)) return 1;
-            if (ib.some(resolveLater)) return -1;
+            var al = ia.some(resolveLater);
+            var bl = ib.some(resolveLater);
+            if (al && !bl) return 1;
+            if (bl && !al) return -1;
             return ia.length - ib.length;
         });
         

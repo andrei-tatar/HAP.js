@@ -1,4 +1,4 @@
-var self = module.exports = function(util, $pluginDir) {
+module.exports = function(util, $pluginDir) {
     var headerTemplate = new util.LazyTemplate("tabheader.html", $pluginDir);
     var tabControlTemplate = new util.LazyTemplate("tabcontrol.html", $pluginDir);
     var tabHeadersTemplate = new util.LazyTemplate("tabheaders.html", $pluginDir);
@@ -43,7 +43,4 @@ var self = module.exports = function(util, $pluginDir) {
             return tabcontrol;
         };
     }
-};
-self.__meta = {
-    exports: "web_tabcontrol"
 };

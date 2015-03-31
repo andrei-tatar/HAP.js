@@ -1,4 +1,4 @@
-var self = module.exports = function(util, $pluginDir, express) {
+module.exports = function(util, $pluginDir, express) {
     var template = new util.LazyTemplate("notification.html", $pluginDir);
     
     var Notification = function (opt) {
@@ -63,7 +63,4 @@ var self = module.exports = function(util, $pluginDir, express) {
             return notifier;
         };
     }
-};
-self.__meta = {
-    exports: "web_notifier"
 };

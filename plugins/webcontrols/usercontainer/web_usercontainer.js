@@ -1,4 +1,4 @@
-var self = module.exports = function(catalog, preferences, express) {
+module.exports = function(catalog, preferences, express) {
     this.init = function (web) {
         web.app.get('/login', function (req, res) {
             res.send('<form action="/login" method="post"><div><label>Username:</label><input type="text" name="username"/><br/>'+
@@ -32,7 +32,4 @@ var self = module.exports = function(catalog, preferences, express) {
             return container;
         };
     };
-};
-self.__meta = {
-    exports: "web_user_container"
 };

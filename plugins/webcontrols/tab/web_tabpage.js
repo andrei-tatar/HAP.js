@@ -1,4 +1,4 @@
-var self = module.exports = function(util, $pluginDir) {
+module.exports = function(util, $pluginDir) {
     var template = new util.LazyTemplate("tabpage.html", $pluginDir);
     
     this.init = function (web) {
@@ -10,7 +10,4 @@ var self = module.exports = function(util, $pluginDir) {
             return tabPage;
         };
     }
-};
-self.__meta = {
-    exports: "web_tabpage"
 };

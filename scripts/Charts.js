@@ -1,4 +1,4 @@
-var self = module.exports = function(MainTab, web, log) {
+module.exports = function(MainTab, web, log) {
     var page = new web.TabPage({title: "Charts", order: 1});
     MainTab.add(page);
 

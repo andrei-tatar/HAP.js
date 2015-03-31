@@ -41,7 +41,7 @@ function objectObserver(obj, ponchanged) {
     };
 };
 
-var self = module.exports = function() {
+module.exports = function() {
     this.create = function(obj, callback) {
         return new objectObserver(obj, callback);
     };

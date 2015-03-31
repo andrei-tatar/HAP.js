@@ -1,4 +1,4 @@
-var self = module.exports = function(log, express, preferences, $pluginDir, fs, plugins) {
+var self = module.exports = function(plugins, log, express, preferences, $pluginDir, fs) {
     if (!preferences.node) {
         preferences.node = {
             port: 5111,
@@ -62,5 +62,5 @@ var self = module.exports = function(log, express, preferences, $pluginDir, fs, 
     });
 };
 self.__meta = {
-    imports: ['log', 'express', 'preferences', '$pluginDir', 'fs', ':node_.+']
+    imports: ':node_.+'
 };

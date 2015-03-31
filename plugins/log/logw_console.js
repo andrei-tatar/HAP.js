@@ -1,4 +1,4 @@
-var self = module.exports = function() {
+module.exports = function() {
     this.write = function (l) {
         var time = new Date(l.timestamp);
         var ex = l.ex ? " (" + l.ex + ")" : "";

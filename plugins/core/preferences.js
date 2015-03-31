@@ -1,4 +1,4 @@
-var self = module.exports = function(fs, log, path, saveTimeout, watcher, util) {
+var self = module.exports = function(path, saveTimeout, watcher, util, fs, log) {
     saveTimeout = saveTimeout || 500;
     path = path || "preferences.json";
     
@@ -40,5 +40,5 @@ var self = module.exports = function(fs, log, path, saveTimeout, watcher, util) 
     watcher.create(this, util.throttle(saveTimeout, save));
 };
 self.__meta = {
-    imports: ["fs", "log", "?preferencesPath", "?preferencesSaveTimeout", "watcher", "util"]
+    imports: ['?preferencesPath', '?preferencesSaveTimeout']
 };
