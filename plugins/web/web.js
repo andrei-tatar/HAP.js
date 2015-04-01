@@ -66,7 +66,7 @@ var self = module.exports = function(components, preferences, log, watcher, util
     var io = socketio(http);
 
     http.listen(preferences.web.port, function(){
-        log.i('[Web Interface]Listening...');
+        log.i('[WEB]Listening...');
     });
     
     var staticContent = "";
@@ -104,7 +104,7 @@ var self = module.exports = function(components, preferences, log, watcher, util
     
     var web = this;
     components.forEach(function (component) {
-        log.i("Initializing " + component.__exports);
+        log.i("[WEB]Initializing " + component.__exports);
         component.init(web);
     });
 };

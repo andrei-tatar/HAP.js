@@ -4,6 +4,17 @@ var self = module.exports = function(decoders, log, util) {
        log.v("[NODE_IR]Using " + d.__exports);
     });
 
+    function send_code(code) {
+        for (var i=0; i<decoders.length; i++) {
+            var pulses = decoders[i].encode(code);
+            if (pulses) {
+                //TODO: format the pulses
+                this.get('/ir/'+pulses);
+                return;
+            }
+        }
+    };
+
     this.init = function (node) {
         node.app.post('/ir', function(req, res) {
             var couldNotDecode = true;
@@ -29,19 +40,11 @@ var self = module.exports = function(decoders, log, util) {
             res.send("OK");
         });
 
+
+
         node.on('device_discovered', function (device) {
             if (device.type != 'hap_ir') return;
-            device.send_ir = function (code) {
-
-                for (var i=0; i<decoders.length; i++) {
-                    var pulses = decoders[i].encode(code);
-                    if (pulses) {
-                        //TODO: format the pulses
-                        device.get('/ir/'+pulses);
-                        return;
-                    }
-                }
-            };
+            device.send_ir = send_code.bind(device);
         });
     };
 };

@@ -19,7 +19,7 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
     app.use(bodyParser.json()); 
 
     app.listen(preferences.node.port, function () {
-        log.i("[HAP Node]Listening...");
+        log.i("[NODE]Listening...");
     });
 
     var getLatestVersion = function(type) {
@@ -109,7 +109,7 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
     var node = this;
     plugins.sort(function(a,b){return (a.order||0)-(b.order||0);});
     plugins.forEach(function (plugin) {
-        log.i("Initializing " + plugin.__exports);
+        log.i("[NODE]Initializing " + plugin.__exports);
         plugin.init(node);
     });
 };
