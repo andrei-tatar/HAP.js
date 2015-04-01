@@ -47,14 +47,20 @@ module.exports = function (preferences, log) {
                 var id = parseInt(parts[0]);
                 var name = parts[1];
                 var type = parts[2];
+                var address = rinfo.address;
 
                 preferences.node.deviceMap[id] = name;
                 var device = node.device(id);
-                device.address = rinfo.address;
-                device.type = type;
-                node.emit('device_discovered', device);
 
-                device.available = true;
+                if (device.address != address || device.type != type ||
+                    device.available != true || device.name != name) {
+                    device.address = address;
+                    device.type = type;
+                    device.name = name;
+                    node.emit('device_discovered', device);
+
+                    device.available = true;
+                }
             }
         });
     };

@@ -1,4 +1,4 @@
-module.exports = function(node, $pluginDir, util) {
+module.exports = function(node, $pluginDir, util, log) {
     var db = new util.Lazy(function() {
         var path = require("path");
         var sqlite3 = require("sqlite3").verbose();
@@ -20,11 +20,13 @@ module.exports = function(node, $pluginDir, util) {
         });
     });
 
-    sensor.on('available', function(available) {
-        if (!available) return;
+    node.on('device_discovered', function (device) {
+        log.i('[NODE]Discovered id:'+device.id+', name:'+device.name+', type:'+device.type+', addr:'+device.address);
 
-        sensor.get('/heap', function (error, response, body) {
-            console.log("Heap Size: " + body);
+        device.on('available', function(available) {
+            device.get('/heap', function (error, response, body) {
+                log.i("Heap Size ("+device.name+"):"+body);
+            });
         });
     });
 };

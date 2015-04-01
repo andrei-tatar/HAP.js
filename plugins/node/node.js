@@ -66,6 +66,7 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
         this.address = '';
         this.type = '';
         this.available = false;
+        this.name = '';
 
         this.get = function(path, complete) {
             request('http://'+ this.address + path, complete);
