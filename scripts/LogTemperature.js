@@ -6,6 +6,7 @@ module.exports = function(node, $pluginDir, util, log) {
     });
 
     var sensor = node.device('temp_birou');
+    if (!sensor) return;
 
     sensor.on('temperature', function (value) {
         console.log("Temperature : " + value);
