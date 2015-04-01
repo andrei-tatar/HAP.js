@@ -1,9 +1,13 @@
-module.exports = function(util, dot, $pluginDir, express) {
+module.exports = function(util, $pluginDir) {
     var defaultTemplate = new util.LazyTemplate("container.html", $pluginDir);
     var scriptTemplate = new util.LazyTemplate("container.script.html", $pluginDir);
     
     var containers = [];
     var idutil = 0;
+    var nodeUtil = require("util"),
+        path = require("path"),
+        express = require('express'),
+        events = require('events');
 
     var simplifyContainerChild = function (child) {
         return {
@@ -97,7 +101,7 @@ module.exports = function(util, dot, $pluginDir, express) {
             containers.push(container);
         };
         
-        require("util").inherits(web.Container, require("events").EventEmitter);
+        nodeUtil.inherits(web.Container, events.EventEmitter);
 
         web.app.get("/container/render/:id", function (req, res) {
             var child = web.findControl(req.params.id, req);
@@ -112,7 +116,7 @@ module.exports = function(util, dot, $pluginDir, express) {
         web.root.css = {};
         web.root.getstyle = getstyle.bind(this, web.root.css);
         web.root.id = idutil++;
-        web.app.use(express.static(require("path").join($pluginDir, '.static')));
+        web.app.use(express.static(path.join($pluginDir, '.static')));
         web.append("<script src='js/container.js'></script>");
         
         web.app.get("/rootcontainer", function (req, res) {

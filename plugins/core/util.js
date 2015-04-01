@@ -1,5 +1,7 @@
-module.exports = function(fs, dot) {
-    var path = require("path");
+module.exports = function() {
+    var path = require('path'),
+        fs = require('fs'),
+        dot = require('dot');
     
     this.throttle = function(timeout, callback) {
         var timer = undefined;
@@ -38,13 +40,14 @@ module.exports = function(fs, dot) {
     };
     
     this.createProperty = function (obj, name, initialValue) {
-        var value = initialValue;
+        var value = undefined;
         obj.__defineGetter__(name, function(){return value;});
         obj.__defineSetter__(name, function(arg) {
             if (value === arg) return;
             value = arg;
             this.emit(name, value);
         });
+        obj[name] = initialValue;
     };
     
     Array.prototype.first = function (check) {

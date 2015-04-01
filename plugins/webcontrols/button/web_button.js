@@ -1,6 +1,7 @@
-module.exports = function(util, $pluginDir, express) {
+module.exports = function(util, $pluginDir) {
     var template = new util.LazyTemplate("button.html", $pluginDir);
-    
+    var express = require('express');
+
     this.init = function (web) {
         web.Button = function(opt) {
             opt = opt || {};

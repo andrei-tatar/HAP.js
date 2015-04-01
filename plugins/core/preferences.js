@@ -1,4 +1,6 @@
-var self = module.exports = function(path, saveTimeout, watcher, util, fs, log) {
+var self = module.exports = function(path, saveTimeout, watcher, util, log) {
+    var fs = require('fs');
+
     saveTimeout = saveTimeout || 500;
     path = path || "preferences.json";
     

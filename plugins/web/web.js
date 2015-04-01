@@ -1,4 +1,4 @@
-var self = module.exports = function(components, preferences, log, express, watcher, util, $pluginDir) {
+var self = module.exports = function(components, preferences, log, watcher, util, $pluginDir) {
     var template = new util.LazyTemplate("index.html", $pluginDir);
     
     if (!preferences.web) {
@@ -11,12 +11,16 @@ var self = module.exports = function(components, preferences, log, express, watc
         };
     }
 
-    var compression = require('compression');
-    var session = require('express-session');
-    var bodyParser = require('body-parser');
-    var passport = require('passport');
-    var LocalStrategy = require('passport-local').Strategy;
-    var app = express();
+    var express = require('express'),
+        compression = require('compression'),
+        session = require('express-session'),
+        bodyParser = require('body-parser'),
+        passport = require('passport'),
+        LocalStrategy = require('passport-local').Strategy,
+        app = express(),
+        http = require('http'),
+        path = require("path"),
+        socketio = require('socket.io');
 
     passport.serializeUser(function(user, done) { done(null, user.id); });
     passport.deserializeUser(function(id, done) {
@@ -50,7 +54,7 @@ var self = module.exports = function(components, preferences, log, express, watc
     }));
     app.use(passport.initialize());
     app.use(passport.session());
-    app.use(express.static(require("path").join($pluginDir, '.public')));
+    app.use(express.static(path.join($pluginDir, '.public')));
     app.post('/login', passport.authenticate('login', { 
         successRedirect: '/', 
         failureRedirect: '/login', 
@@ -58,9 +62,9 @@ var self = module.exports = function(components, preferences, log, express, watc
     }));
     
     log.v("Starting web server");
-    var http = require('http').Server(app);
-    var io = require('socket.io')(http);
-    
+    var http = http.Server(app);
+    var io = socketio(http);
+
     http.listen(preferences.web.port, function(){
         log.i('[Web Interface]Listening...');
     });

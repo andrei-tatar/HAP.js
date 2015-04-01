@@ -1,5 +1,6 @@
-module.exports = function(util, $pluginDir, express) {
+module.exports = function(util, $pluginDir) {
     var template = new util.LazyTemplate("notification.html", $pluginDir);
+    var express = require('express');
     
     var Notification = function (opt) {
         this.css = { "margin-bottom": "5px" };

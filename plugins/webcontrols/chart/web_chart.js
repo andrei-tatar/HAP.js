@@ -1,6 +1,7 @@
-module.exports = function(util, $pluginDir, express) {
+module.exports = function(util, $pluginDir) {
     var template = new util.LazyTemplate("chart.html", $pluginDir);
-    
+    var express = require('express');
+
     this.init = function (web) {
         web.Chart = function(opt) {
             opt = opt || {};

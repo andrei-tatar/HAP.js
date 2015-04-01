@@ -1,6 +1,7 @@
-module.exports = function(util, dot, $pluginDir, express) {
+module.exports = function(util, $pluginDir) {
     var template = new util.LazyTemplate("slider.html", $pluginDir);
-    
+    var express = require('express');
+
     this.init = function (web) {
         web.Slider = function (opt) {
             opt = opt || {};
