@@ -12,7 +12,8 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
         nodeUtil = require("util"),
         fs = require('fs'),
         express = require('express'),
-        http = require('http');
+        http = require('http'),
+        Agent = require('agentkeepalive');;
 
     var app = express();
     app.use(bodyParser.json()); 
@@ -60,17 +61,17 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
 
     var devices = []; //devices are lazy created
 
+    var agent = new Agent({
+        maxSockets: 1,
+        keepAlive: true
+    });
+
     this.NodeDevice = function (id, name, address, type) {
         util.createReadOnlyProperty(this, 'id', id);
         util.createReadOnlyProperty(this, 'address', address);
         util.createReadOnlyProperty(this, 'type', type);
         util.createReadOnlyProperty(this, 'name', name);
         util.createProperty(this, 'available', false);
-
-        var agent = new http.Agent({
-            maxSockets: 1,
-            keepAlive: true
-        });
 
         this.request = function (method, path, data, callback) {
             var options = {
