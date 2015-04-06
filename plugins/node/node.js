@@ -95,7 +95,7 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
                 });
 
                 res.on('end', function () {
-                    callback(res.statusCode, body);
+                    if (callback) callback(res.statusCode, body);
                 });
             });
 
@@ -108,7 +108,7 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
 
             req.on('error', function(err) {
                 if (err.code === "ECONNRESET") {
-                    callback(false);
+                    if (callback) callback(false);
                 }
             });
 
