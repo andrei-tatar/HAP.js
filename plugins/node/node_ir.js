@@ -4,16 +4,22 @@ var self = module.exports = function(decoders, log, util) {
        log.v("[NODE_IR]Using " + d.__exports);
     });
 
-    function send_code(code) {
+    function send_code(code, callback) {
         for (var i=0; i<decoders.length; i++) {
             var pulses = decoders[i].encode(code);
             if (pulses) {
-                //TODO: format the pulses
-                this.get('/ir/'+pulses);
-                return;
+                this.post('/ir', pulses, function (statusCode, body) {
+                    if (callback) {
+                        var success = statusCode == 200 && body == 'OK';
+                        callback(success);
+                    }
+                });
+                return true;
             }
         }
-    };
+
+        return false;
+    }
 
     this.init = function (node) {
         node.app.post('/ir', function(req, res) {
@@ -39,8 +45,6 @@ var self = module.exports = function(decoders, log, util) {
 
             res.send("OK");
         });
-
-
 
         node.on('device_discovered', function (device) {
             if (device.type != 'hap_ir') return;

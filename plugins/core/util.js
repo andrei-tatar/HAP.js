@@ -49,7 +49,12 @@ module.exports = function() {
         });
         obj[name] = initialValue;
     };
-    
+
+    this.createReadOnlyProperty = function(obj, name, value) {
+        obj[name] = value;
+        Object.defineProperty(obj, name, { writable: false });
+    };
+
     Array.prototype.first = function (check) {
         for (var i=0; i<this.length; i++) {
             var item = this[i];

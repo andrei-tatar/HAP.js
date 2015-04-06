@@ -43,7 +43,7 @@ module.exports = function (preferences, log) {
                 broadcast.forEach(function (pair) {
                     socket.send(pair.message, 0, pair.message.length, preferences.node.udpPort, pair.address);
                 });
-                setTimeout(send, 15000);
+                setTimeout(send, 10000);
             };
 
             send();
@@ -57,17 +57,11 @@ module.exports = function (preferences, log) {
                 var type = parts[2];
                 var address = rinfo.address;
 
-                preferences.node.deviceMap[id] = name;
                 var device = node.device(id);
-
-                if (device.address != address || device.type != type ||
-                    device.available != true || device.name != name) {
-                    device.address = address;
-                    device.type = type;
-                    device.name = name;
+                if (!device) {
+                    device = new node.NodeDevice(id, name, address, type);
                     node.emit('device_discovered', device);
-
-                    device.available = true;
+                    node.addDevice(device);
                 }
             }
         });

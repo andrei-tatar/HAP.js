@@ -2,18 +2,17 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
     if (!preferences.node) {
         preferences.node = {
             port: 5111,
-            udpPort: 5112,
-            deviceMap: { }
+            udpPort: 5112
         };
     }
     
     var bodyParser = require('body-parser'),
         path = require('path'),
-        request = require('request'),
         events = require('events'),
         nodeUtil = require("util"),
         fs = require('fs'),
-        express = require('express');
+        express = require('express'),
+        http = require('http');
 
     var app = express();
     app.use(bodyParser.json()); 
@@ -59,51 +58,99 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
         res.status(404).send("Not Found");
     });
 
-    var devices = { }; //devices are lazy created
+    var devices = []; //devices are lazy created
 
-    var NodeDevice = function (id) {
-        this.id = id;
-        this.address = '';
-        this.type = '';
-        this.available = false;
-        this.name = '';
+    this.NodeDevice = function (id, name, address, type) {
+        util.createReadOnlyProperty(this, 'id', id);
+        util.createReadOnlyProperty(this, 'address', address);
+        util.createReadOnlyProperty(this, 'type', type);
+        util.createReadOnlyProperty(this, 'name', name);
+        util.createProperty(this, 'available', false);
+
+        var agent = new http.Agent({
+            maxSockets: 1,
+            keepAlive: true
+        });
+
+        this.request = function (method, path, data, callback) {
+            var options = {
+                hostname: this.address,
+                method: method,
+                path: path,
+                agent: agent
+            };
+
+            if (data) {
+                options.headers = {
+                    'Content-Type': 'application/json',
+                    'Content-Length': data.length
+                };
+            }
+
+            var req = http.request(options, function(res) {
+                var body = '';
+
+                res.on('data', function (chunk) {
+                    body += chunk;
+                });
+
+                res.on('end', function () {
+                    callback(res.statusCode, body);
+                });
+            });
+
+            req.on('socket', function (socket) {
+                socket.setTimeout(1500);
+                socket.on('timeout', function() {
+                    req.abort();
+                });
+            });
+
+            req.on('error', function(err) {
+                if (err.code === "ECONNRESET") {
+                    callback(false);
+                }
+            });
+
+            if (data) req.write(data);
+            req.end();
+        };
 
         this.get = function(path, complete) {
-            request('http://'+ this.address + path, complete);
+            this.request('GET', path, undefined, complete);
+        };
+
+        this.post = function(path, data, complete) {
+            this.request('POST', path, JSON.stringify(data), complete);
         };
     };
 
-    nodeUtil.inherits(NodeDevice, events.EventEmitter);
+    nodeUtil.inherits(this.NodeDevice, events.EventEmitter);
     var events = new events.EventEmitter();
-    this.on = events.on;
-    this.emit = events.emit;
+    this.on = events.on.bind(events);
+    this.emit = events.emit.bind(events);
 
     this.app = app;
-    this.device = function (idOrName) {
-        var id;
-        if (typeof idOrName === "string") {
-            //we have a name
-            for (var key in preferences.node.deviceMap) {
-                if (preferences.node.deviceMap[key].toUpperCase() === idOrName.toUpperCase()) {
-                    id = key;
-                    break;
-                }
-            }
-        }
-        else
-            id = idOrName;
+    this.device = function (idOrName, onadd) {
+        var device = devices.first(function (d) {
+            return d.id == idOrName || d.name == idOrName;
+        });
 
-        if (typeof id === "undefined")
-            return undefined;
-
-        var device = devices[id];
-        if (!device) {
-            device = new NodeDevice(id);
-            util.createProperty(device, 'available');
-            devices[id] = device;
+        if (util.isFunction(onadd)) {
+            if (device)
+                onadd(device);
+            else
+                events.on('device_add_'+idOrName, onadd);
         }
 
         return device;
+    };
+
+    this.addDevice = function (device) {
+        devices.push(device);
+        events.emit('device_add_'+device.id, device);
+        events.emit('device_add_'+device.name, device);
+        events.emit('device_add', device);
     };
 
     var node = this;
