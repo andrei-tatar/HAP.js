@@ -23,22 +23,11 @@ var self = module.exports = function(decoders, log, util) {
 
     this.init = function (node) {
         node.app.post('/ir', function(req, res) {
-            var couldNotDecode = true;
             for (var i=0; i<decoders.length; i++) {
                 var decoded = decoders[i].decode(req.body.pulses);
                 if (decoded) {
-                    couldNotDecode = false;
-
                     var device = node.device(req.body.id);
-                    if (device) {
-                        if (device.init_ir) {
-                            device.init_ir = true;
-                            util.createProperty(device, 'ir', decoded);
-                        }
-                        else
-                            device.ir = decoded;
-                    }
-
+                    if (device) device.emit('ir', decoded);
                     break;
                 }
             }

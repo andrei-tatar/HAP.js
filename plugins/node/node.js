@@ -88,6 +88,8 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
                 };
             }
 
+            var timeoutListener = undefined;
+
             var req = http.request(options, function(res) {
                 var body = '';
 
@@ -96,15 +98,17 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
                 });
 
                 res.on('end', function () {
+                    res.socket.removeListener('timeout', timeoutListener);
                     if (callback) callback(res.statusCode, body);
                 });
             });
 
             req.on('socket', function (socket) {
                 socket.setTimeout(1500);
-                socket.on('timeout', function() {
+                timeoutListener = function() {
                     req.abort();
-                });
+                };
+                socket.on('timeout', timeoutListener);
             });
 
             req.on('error', function(err) {
