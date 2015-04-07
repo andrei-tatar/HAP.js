@@ -5,9 +5,8 @@ module.exports = function(util, $pluginDir) {
     this.init = function (web) {
         web.Button = function(opt) {
             opt = opt || {};
-            
-            this.css = opt.css;
-            this.order = opt.order;
+
+            util.copyProperties(this, opt);
             
             util.createProperty(this, "text", opt.text || "");
             this.on("text", function (arg) {

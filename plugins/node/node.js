@@ -13,7 +13,7 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
         fs = require('fs'),
         express = require('express'),
         http = require('http'),
-        Agent = require('agentkeepalive');;
+        Agent = require('agentkeepalive');
 
     var app = express();
     app.use(bodyParser.json()); 
@@ -63,7 +63,8 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
 
     var agent = new Agent({
         maxSockets: 1,
-        keepAlive: true
+        keepAlive: true,
+        keepAliveTimeout: 60000
     });
 
     this.NodeDevice = function (id, name, address, type) {

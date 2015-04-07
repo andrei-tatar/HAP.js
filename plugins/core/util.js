@@ -55,6 +55,11 @@ module.exports = function() {
         Object.defineProperty(obj, name, { writable: false });
     };
 
+    this.copyProperties = function (dst, src) {
+        for (var key in src)
+            dst[key] = src[key];
+    };
+
     Array.prototype.first = function (check) {
         for (var i=0; i<this.length; i++) {
             var item = this[i];
