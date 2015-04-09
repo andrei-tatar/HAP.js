@@ -1,1 +1,3 @@
-npm install compression dot esprima express express-session nodemon socket.io passport passport-local body-parser
+Home Automation Project
+
+ESP8266
