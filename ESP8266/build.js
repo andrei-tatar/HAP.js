@@ -1,0 +1,150 @@
+var arguments = process.argv.slice(2);
+if (arguments.length < 2) {
+    console.log("Invalid number of args");
+    console.log("node build.js destination_path build_type");
+    process.exit(1);
+}
+
+var fs = require('fs'),
+    spawn = require('child_process').spawn,
+    path = require('path');
+
+//TODO: only on windows?
+process.env['PATH'] += ';C:\\MinGW\\bin;C:\\MinGW\\msys\\1.0\\bin';
+
+var destination_path = arguments[0];
+var make_type = arguments[1];
+if (make_type != 'all') {
+    execute('make', arguments.slice(1), function (code) {
+        process.exit(code);
+    });
+    return;
+}
+
+var headerFiles = getFilesSync('.', '.h');
+var type, major, minor;
+
+for (var i=0; i<headerFiles.length; i++) {
+    var fileContent = fs.readFileSync(headerFiles[i]).toString();
+
+    var typeMatch = fileContent.match(/#define\s+OTA_TYPE\s+"([a-zA-Z0-9_\-]+)"/);
+    if (!typeMatch) continue;
+    type = typeMatch[1];
+
+    var majorMatch = fileContent.match(/#define\s+OTA_MAJOR\s+(\d+)/);
+    if (!majorMatch) continue;
+    major = majorMatch[1];
+
+    var minorMatch = fileContent.match(/#define\s+OTA_MINOR\s+(\d+)/);
+    if (!minorMatch) continue;
+    minor = minorMatch[1];
+
+    break;
+}
+
+if (!type && !major && !minor) {
+    console.error("No header file found that contanins type, major and minor version");
+    return;
+}
+
+var version = major + '.' + minor;
+
+var fwPath = path.join('firmware', 'upgrade');
+console.log(fwPath);
+
+var dstPath = path.join(destination_path, type);
+createDirectoryTree(dstPath);
+
+var dst1 = path.join(dstPath, "user1.bin");
+var dst2 = path.join(dstPath, "user2.bin");
+deleteFileIfExists(dst1);
+deleteFileIfExists(dst2);
+
+execute('make', ['rebuild', 'app=1'], function (code) {
+    if (code == 0) {
+        var file1 = path.join(fwPath, "user1.512.new.bin");
+        fs.renameSync(file1, dst1);
+
+        execute('make', ['rebuild', 'app=2'], function (code) {
+            var file2 = path.join(fwPath, "user2.512.new.bin");
+            fs.renameSync(file2, dst2);
+
+            var finalDstPath = path.join(destination_path, type, version);
+            var fdst1 = path.join(finalDstPath, "user1.bin");
+            var fdst2 = path.join(finalDstPath, "user2.bin");
+
+            createDirectoryTree(finalDstPath);
+            deleteFileIfExists(fdst1);
+            deleteFileIfExists(fdst2);
+
+            fs.renameSync(dst1, fdst1);
+            fs.renameSync(dst2, fdst2);
+
+            console.log('Copied %s to %s', file1, fdst1);
+            console.log('Copied %s to %s', file2, fdst2);
+        });
+    }
+    else
+        process.exit(code);
+});
+
+function getFilesSync(dir, extension) {
+    var foundFiles = [];
+    var list = fs.readdirSync(dir);
+    for (var i=0; i<list.length; i++) {
+        var file = path.join(dir, list[i]);
+        var stat = fs.statSync(file);
+        if (stat && stat.isDirectory())
+            foundFiles = foundFiles.concat(getFilesSync(file, extension));
+        else if (path.extname(file) == extension)
+            foundFiles.push(file);
+    }
+
+    return foundFiles;
+}
+
+function execute(command, arguments, complete) {
+    var cmdProcess = spawn(command, arguments);
+
+    cmdProcess.stdout.on('data', function (data) {
+        process.stdout.write(data);
+    });
+
+    cmdProcess.stderr.on('data', function (data) {
+        process.stderr.write(data);
+    });
+
+    cmdProcess.on('exit', function (code) {
+        if (complete) complete(code);
+    });
+}
+
+function directoryExists(dirPath) {
+    try {
+        var stat = fs.statSync(dirPath);
+        return stat && stat.isDirectory();
+    } catch (e) {
+        return false
+    }
+}
+
+function createDirectoryTree(dirPath) {
+    if (directoryExists(dirPath)) return;
+
+    var parent = path.dirname(dirPath);
+    createDirectoryTree(parent);
+
+    fs.mkdirSync(dirPath);
+}
+
+function deleteFileIfExists(filePath) {
+    var stat;
+    try {
+        stat = fs.statSync(filePath);
+    } catch (e) {
+
+    }
+
+    if (stat && stat.isFile())
+        fs.unlinkSync(filePath);
+}
