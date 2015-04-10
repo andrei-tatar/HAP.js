@@ -15,8 +15,7 @@ static uint8_t pos = 0;
 static bool first = true;
 static ETSTimer timer;
 
-#define IR_LED_INIT    {PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);GPIO_OUTPUT_SET(14, 0);}
-#define IR_LED(x)      GPIO_OUTPUT_SET(14, x)
+#define IR_LED(x)                   GPIO_OUTPUT_SET(IR_OUT_PIN, x)
 
 static ICACHE_FLASH_ATTR void send_pulses(uint16_t *pulses, uint8_t length)
 {
@@ -48,8 +47,6 @@ static ICACHE_FLASH_ATTR void send_pulses(uint16_t *pulses, uint8_t length)
 
 static ICACHE_FLASH_ATTR bool httpd_onrequest(struct HttpdConnectionSlot *slot, uint8_t verb, char* path, uint8_t *data, uint16_t length)
 {
-    ets_uart_printf("%d %s\n", verb, path);
-
     if (strcasecmp(path, "/ir") != 0 || verb != HTTPD_VERB_POST)
         return false;
 
@@ -124,22 +121,23 @@ static void ICACHE_FLASH_ATTR gpio_intr(void *arg)
 
 void ICACHE_FLASH_ATTR user_init()
 {
-    IR_LED_INIT;
 	uart_init(BIT_RATE_115200);
 	ota_init(OTA_TYPE, OTA_MAJOR, OTA_MINOR);
 
-	hap_init();
-
-	httpd_register(httpd_onrequest);
-	httpd_init(80);
-
 	ETS_GPIO_INTR_DISABLE();
 	ETS_GPIO_INTR_ATTACH(gpio_intr, NULL);
-	GPIO_DIS_OUTPUT(13);
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13);
-	gpio_pin_intr_state_set(GPIO_ID_PIN(13), GPIO_PIN_INTR_ANYEDGE);
+	GPIO_DIS_OUTPUT(IR_IN_PIN);
+	PIN_FUNC_SELECT(IR_IN_MUX, IR_IN_FUNC);
+	gpio_pin_intr_state_set(GPIO_ID_PIN(IR_IN_PIN), GPIO_PIN_INTR_ANYEDGE);
 	ETS_GPIO_INTR_ENABLE();
+
+	PIN_FUNC_SELECT(IR_OUT_MUX, IR_OUT_FUNC);
+	GPIO_OUTPUT_SET(IR_OUT_PIN, 0);
 
     os_timer_disarm(&timer);
     os_timer_setfn(&timer, (os_timer_func_t *)on_timeout, &timer);
+
+    hap_init();
+    httpd_register(httpd_onrequest);
+    httpd_init(80);
 }
