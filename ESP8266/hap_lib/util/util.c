@@ -10,9 +10,8 @@ typedef struct {
 
     char ssid[32];
     char password[64];
-    char server[64];
-    char friendlyName[32];
-    uint16_t port;
+    char serverName[64];
+    char nodeName[32];
     uint16_t udpPort;
 } HapSettings __attribute__((aligned(4)));
 
@@ -30,13 +29,9 @@ const char * config_index =
 <br/>\
 <input type='text' name='password' placeholder='Password' value='%s' required/>\
 <br/>\
-<input type='text' name='server' placeholder='HAP Server' value='%s' required\
-pattern='^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})$|^((([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9]))$'/>\
+<input type='text' name='server' placeholder='Server Name' value='%s' pattern='^[a-zA-Z0-9_]+$' required />\
 <br/>\
-<input type='text' name='port' placeholder='Port' value='%d' required\
-pattern='^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$'/>\
-<br/>\
-<input type='text' name='friendly' placeholder='Friendly Name' value='%s' required/>\
+<input type='text' name='friendly' placeholder='Node Name' value='%s' pattern='^[a-zA-Z0-9_]+$' required/>\
 <br/>\
 <input type='text' name='udpport' placeholder='UDP Port' value='%d' required\
 pattern='^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$'/>\
@@ -69,18 +64,9 @@ static bool ICACHE_FLASH_ATTR handleSettingsParameter(const char* key, const cha
     }
     else if (strcmp(key, "server") == 0)
     {
-        if (strcmp(settings.server, value))
+        if (strcmp(settings.serverName, value))
         {
-            os_strcpy(settings.server, value);
-            return true;
-        }
-    }
-    else if (strcmp(key, "port") == 0)
-    {
-        int port = atoi(value);
-        if (settings.port != port)
-        {
-            settings.port = port;
+            os_strcpy(settings.serverName, value);
             return true;
         }
     }
@@ -95,9 +81,9 @@ static bool ICACHE_FLASH_ATTR handleSettingsParameter(const char* key, const cha
     }
     else if (strcmp(key, "friendly") == 0)
     {
-        if (strcmp(settings.friendlyName, value))
+        if (strcmp(settings.nodeName, value))
         {
-            os_strcpy(settings.friendlyName, value);
+            os_strcpy(settings.nodeName, value);
             return true;
         }
     }
@@ -147,7 +133,6 @@ static bool ICACHE_FLASH_ATTR httpd_request(struct HttpdConnectionSlot *slot, ui
 
             if (changed)
             {
-                ota_set_server(settings.server, settings.port);
                 saveSettings();
                 httpd_send_html(slot, 200, "Settings saved. Do a <a href='/reset'>reset</a> to apply them!");
             }
@@ -166,8 +151,8 @@ static bool ICACHE_FLASH_ATTR httpd_request(struct HttpdConnectionSlot *slot, ui
     {
         httpd_send_html(slot, 200, config_index,
                 settings.ssid, settings.password,
-                settings.server, settings.port,
-                settings.friendlyName,
+                settings.serverName,
+                settings.nodeName,
                 settings.udpPort);
     }
     else if (strcasecmp(path, "/clear") == 0)
@@ -291,28 +276,28 @@ static void ICACHE_FLASH_ATTR wifi_check_ip(void *arg)
     if (++failedCheckTimes >= 10)
     {
         os_timer_disarm(timer);
-        setup_wifi_ap_mode(settings.friendlyName);
+        setup_wifi_ap_mode(settings.nodeName);
     }
 }
+
+static uint16_t hapPort;
+static uint32_t hapAddress = 0;
 
 static void ICACHE_FLASH_ATTR udp_received(void *arg, char *data, unsigned short len)
 {
     struct espconn *udpconn= (struct espconn*)arg;
     if (len > 5 && strncmp(data, "HAP", 3) == 0)
     {
-        uint16_t hapPort = (data[3] << 8) | data[4];
         const char* hapServer = &data[5];
-        if (settings.port != hapPort || strcmp(settings.server, hapServer) != 0)
+        if (strcmp(settings.serverName, hapServer) == 0)
         {
-            strcpy(settings.server, hapServer);
-            settings.port = hapPort;
-            ota_set_server(hapServer, settings.port);
-            saveSettings();
-        }
+            hapPort = (data[3] << 8) | data[4];
+            hapAddress = *(uint32_t*)udpconn->proto.udp->remote_ip;
 
-        char response[128];
-        int length = os_sprintf(response, "%d:%s:%s", system_get_chip_id(), settings.friendlyName, ota_get_type());
-        espconn_sent(udpconn, response, length);
+            char response[128];
+            int length = os_sprintf(response, "%d:%s:%s", system_get_chip_id(), settings.nodeName, ota_get_type());
+            espconn_sent(udpconn, response, length);
+        }
     }
 }
 
@@ -343,11 +328,10 @@ bool ICACHE_FLASH_ATTR hap_init()
 	{
 	    settings.password[0] = 0;
 	    settings.ssid[0] = 0;
-	    settings.server[0] = 0;
-	    settings.port = 5111;
+	    strcpy(settings.serverName, "HapServer");
 	    settings.udpPort = 5112;
-		os_sprintf(settings.friendlyName, "hap_%d", system_get_chip_id());
-		return setup_wifi_ap_mode(settings.friendlyName);
+		os_sprintf(settings.nodeName, "hap_%d", system_get_chip_id());
+		return setup_wifi_ap_mode(settings.nodeName);
 	}
 	else
 	{
@@ -356,20 +340,19 @@ bool ICACHE_FLASH_ATTR hap_init()
         os_timer_setfn(&timer, (os_timer_func_t *)wifi_check_ip, &timer);
         os_timer_arm(&timer, 1000, 1);
 
-	    ota_set_server(settings.server, settings.port);
 	    udp_init();
 		return setup_wifi_st_mode(settings.ssid, settings.password);
 	}
 }
 
-const char * ICACHE_FLASH_ATTR hap_get_server()
+const uint32_t ICACHE_FLASH_ATTR hap_get_server()
 {
-    return settings.server;
+    return hapAddress;
 }
 
 const uint16_t ICACHE_FLASH_ATTR hap_get_port()
 {
-    return settings.port;
+    return hapPort;
 }
 
 uint16_t ICACHE_FLASH_ATTR atou16(char** ptr)

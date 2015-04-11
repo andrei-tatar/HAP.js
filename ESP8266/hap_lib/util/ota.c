@@ -14,7 +14,6 @@
 
 static otaCallbackHandler otaFinishedCallback;
 static const char* ota_type = "undefined";
-static const char* ota_server = NULL;
 static uint16_t ota_major = 0, ota_minor = 0;
 
 static void ICACHE_FLASH_ATTR handle_callback(bool success)
@@ -82,18 +81,16 @@ void ICACHE_FLASH_ATTR ota_request_callback(bool success, uint16_t statusCode, u
 		update->port = httpGetConnection()->proto.tcp->remote_port;
 
 		update->check_cb = ota_finished_callback;
-		update->check_times = 5000;
+		update->check_times = 10000;
 		update->url = (uint8 *)os_zalloc(512);
 
+		uint32_t address = hap_get_server();
 		os_sprintf(update->url,
 		        "GET /update/get/%s/%s HTTP/1.1\r\n"
-				"Host: %s\r\n"
-				"Connection: keep-alive\r\n"
-				"Cache-Control: no-cache\r\n"
-				"Accept: */*\r\n"
-				"Accept-Encoding: gzip,deflate,sdch\r\n"
-				"Accept-Language: zh-CN,zh;q=0.8\r\n\r\n",
-				ota_type, file, ota_server);
+				"Host: "IPSTR":%d\r\n"
+				"Connection: close\r\n"
+				"\r\n",
+				ota_type, file, IP2STR(&address), hap_get_port());
 
 		if (system_upgrade_start(update) == false)
 		{
@@ -121,24 +118,14 @@ void ICACHE_FLASH_ATTR ota_upgrade(otaCallbackHandler callback)
 {
     otaFinishedCallback = callback;
 
-    if (ota_server == NULL)
+    if (hap_get_server() == 0)
     {
         handle_callback(false);
         return;
     }
 
 	ets_uart_printf("OTA: Checking for fw upgrades\r\n");
-	httpGet(ota_request_callback, "http://%s/update/latest/%s", ota_server, ota_type);
-}
-
-void ICACHE_FLASH_ATTR ota_set_server(const char* updateServer, uint16_t port)
-{
-    if (ota_server == NULL)
-    {
-        static char static_ota_server[30];
-        ota_server = static_ota_server;
-    }
-    os_sprintf(ota_server, "%s:%d", updateServer, port);
+	httpGet(hap_get_server(), hap_get_port(), ota_request_callback, "/update/latest/%s", ota_type);
 }
 
 void ICACHE_FLASH_ATTR ota_init(const char* type, uint16_t majorVersion, uint16_t minorVersion)

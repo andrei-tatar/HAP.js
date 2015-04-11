@@ -9,13 +9,14 @@
 #include "user_config.h"
 #include "gpio.h"
 #include "http.h"
+#include "httpclient.h"
 
 static uint16_t pulses[70];
 static uint8_t pos = 0;
 static bool first = true;
 static ETSTimer timer;
 
-#define IR_LED(x)                   GPIO_OUTPUT_SET(IR_OUT_PIN, x)
+#define IR_LED(x) GPIO_OUTPUT_SET(IR_OUT_PIN, x)
 
 static ICACHE_FLASH_ATTR void send_pulses(uint16_t *pulses, uint8_t length)
 {
@@ -79,8 +80,10 @@ static void on_timeout(void *arg)
 {
     uint8_t i;
 
-    if (pos)
+    os_intr_lock();
+    if (pos && hap_get_server())
     {
+
         char pulsesArray[360];
         char *dest = pulsesArray;
         for (i=0;i<pos;i++)
@@ -89,11 +92,13 @@ static void on_timeout(void *arg)
             if (i < pos-1) *dest++ = ',';
         }
         *dest = 0;
+        os_intr_unlock();
 
-        char url[50];
-        os_sprintf(url, "http://%s:%d/ir", hap_get_server(), hap_get_port());
-        httpPostJson(NULL, url, "{\"pulses\":[%s],\"id\":%d}", pulsesArray, system_get_chip_id());
+        httpPostJson(hap_get_server(), hap_get_port(), NULL,
+                "/ir", "{\"pulses\":[%s],\"id\":%d}", pulsesArray, system_get_chip_id());
     }
+    else
+        os_intr_unlock();
 
     pos = 0;
     first = true;

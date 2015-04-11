@@ -146,24 +146,6 @@ static void ICACHE_FLASH_ATTR httpStartRequest(struct espconn *connection)
 	}
 }
 
-static void ICACHE_FLASH_ATTR dnsResolved(const char *name, ip_addr_t *ipaddr, void *arg)
-{
-	struct espconn *pespconn = (struct espconn *) arg;
-
-	if (ipaddr != NULL && ipaddr->addr != 0)
-	{
-		if (pespconn->type == ESPCONN_TCP)
-		{
-			os_memcpy(pespconn->proto.tcp->remote_ip, &ipaddr->addr, 4);
-			httpStartRequest(pespconn);
-			return;
-	    }
-	}
-
-	if (requestCallback)
-	    requestCallback(false, 0, NULL, 0);
-}
-
 struct espconn* ICACHE_FLASH_ATTR httpGetConnection() {
 	static esp_tcp connectionTcp;
 	static struct espconn connection = {.proto={.tcp=&connectionTcp}};
@@ -171,13 +153,14 @@ struct espconn* ICACHE_FLASH_ATTR httpGetConnection() {
 }
 
 void ICACHE_FLASH_ATTR httpRequest(
+        uint32_t address, uint16_t port,
 		httpRequestCallback callback,
-		const char* url,
+		const char* path,
 		const char* verb,
 		const char* contentType,
 		const void* data, uint32_t length)
 {
-	if (inprogress || strncasecmp(url, "http://", 7) != 0)
+	if (inprogress)
 	{
 		//invalid url or already a request in progress
 		if (callback) callback(false, 0, NULL, 0);
@@ -186,39 +169,16 @@ void ICACHE_FLASH_ATTR httpRequest(
 
 	inprogress = true;
 
-	url += 7;
-	const char *aux = url;
-	while ((*aux >= 'a' && *aux <= 'z') ||
-			(*aux >= 'A' && *aux <= 'Z') ||
-			(*aux >= '0' && *aux <= '9') ||
-			*aux == '-' || *aux == '.') aux++;
-	uint8_t hostLength = aux - url;
-
-	int ip = 0;
-	int port;
-	const char *path;
-	char host[100];
-
-	os_memcpy(host, url, hostLength);
-	host[hostLength] = 0;
-
-	if (*aux == ':')
-		port = atoi(++aux);
-	else
-		port = 80;
-
-	while (*aux && *aux != '/') aux++;
-	path = *aux ? aux : "/";
+	DEBUG_PRINT("[HTTPC]Requesting %s on "IPSTR":%d\n", path, IP2STR(&address), port);
 
 	struct espconn *connection = httpGetConnection();
-
 	bufferLength = os_sprintf(buffer,
 		"%s %s HTTP/1.1\r\n"
-		"Host: %s:%d\r\n"
+		"Host: "IPSTR":%d\r\n"
 		"Connection: close\r\n"
 		"Content-Type: %s\r\n"
 		"Content-Length: %d\r\n\r\n",
-		verb, path, host, port, contentType, length);
+		verb, path, IP2STR(&address), port, contentType, length);
 
 	if (data)
 	{
@@ -227,46 +187,39 @@ void ICACHE_FLASH_ATTR httpRequest(
 	}
 
 	requestCallback = callback;
-	ip = ipaddr_addr(host);
-	if (ip == -1)
-	{
-		httpInitConnection(connection, 0, port);
-		static ip_addr_t addr;
-		espconn_gethostbyname(connection, host, &addr, dnsResolved);
-	}
-	else
-	{
-		httpInitConnection(connection, ip, port);
-		httpStartRequest(connection);
-	}
+    httpInitConnection(connection, address, port);
+    httpStartRequest(connection);
 }
 
 void ICACHE_FLASH_ATTR httpGet(
+        uint32_t address, uint16_t port,
 		httpRequestCallback callback,
-		const char* url_fmt, ...)
+		const char* path_fmt, ...)
 {
 	char url[128];
 
 	va_list al;
-	va_start(al, url_fmt);
-	ets_vsnprintf(url, sizeof(url)-1, url_fmt, al);
+	va_start(al, path_fmt);
+	ets_vsnprintf(url, sizeof(url)-1, path_fmt, al);
 	va_end(al);
 
-	httpRequest(callback, url, verb_get, mime_textplain, NULL, 0);
+	httpRequest(address, port, callback, url, verb_get, mime_textplain, NULL, 0);
 }
 
 void ICACHE_FLASH_ATTR httpPost(
+        uint32_t address, uint16_t port,
 		httpRequestCallback callback,
-		const char* url,
+		const char* path,
 		const char* contentType,
 		const void* data, uint32_t length)
 {
-	httpRequest(callback, url, verb_post, contentType, data, length);
+	httpRequest(address, port, callback, path, verb_post, contentType, data, length);
 }
 
 void ICACHE_FLASH_ATTR httpPostJson(
+        uint32_t address, uint16_t port,
 		httpRequestCallback callback,
-		const char* url,
+		const char *path,
 		const char *fmt, ...)
 {
 	char buffer[512];
@@ -276,5 +229,5 @@ void ICACHE_FLASH_ATTR httpPostJson(
 	int length = ets_vsnprintf(buffer, sizeof(buffer)-1, fmt, al);
 	va_end(al);
 
-	httpPost(callback, url, mime_application_json, buffer, length);
+	httpPost(address, port, callback, path, mime_application_json, buffer, length);
 }

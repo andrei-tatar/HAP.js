@@ -1,10 +1,8 @@
 var self = module.exports = function(plugins, log, preferences, $pluginDir, util) {
-    if (!preferences.node) {
-        preferences.node = {
-            port: 5111,
-            udpPort: 5112
-        };
-    }
+    if (!preferences.node) preferences.node = {};
+    if (!preferences.node.port) preferences.node.port = 5111;
+    if (!preferences.node.udpPort) preferences.node.udpPort = 5112;
+    if (!preferences.node.serverName) preferences.node.serverName = 'hap_server';
     
     var bodyParser = require('body-parser'),
         path = require('path'),
@@ -64,7 +62,8 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
     var agent = new Agent({
         maxSockets: 1,
         keepAlive: true,
-        keepAliveTimeout: 60000
+        keepAliveTimeout: 60000,
+        timeout: 1500
     });
 
     this.NodeDevice = function (id, name, address, type) {
@@ -89,8 +88,6 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
                 };
             }
 
-            var timeoutListener = undefined;
-
             var req = http.request(options, function(res) {
                 var body = '';
 
@@ -99,17 +96,8 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
                 });
 
                 res.on('end', function () {
-                    res.socket.removeListener('timeout', timeoutListener);
                     if (callback) callback(res.statusCode, body);
                 });
-            });
-
-            req.on('socket', function (socket) {
-                socket.setTimeout(1500);
-                timeoutListener = function() {
-                    req.abort();
-                };
-                socket.on('timeout', timeoutListener);
             });
 
             req.on('error', function(err) {

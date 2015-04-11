@@ -35,13 +35,11 @@ static void send_temperature(void *arg)
 	    return;
 
     char temperature[10];
-    if (tcn_read(temperature))
+    if (tcn_read(temperature) && hap_get_server())
     {
         LED_ON;
 
-        char url[50];
-        os_sprintf(url, "http://%s:%d/temperature", hap_get_server(), hap_get_port());
-        httpPostJson(send_callback, url, "{\"temperature\":%s,\"id\":%d}",
+        httpPostJson(hap_get_server(), hap_get_port(), send_callback, "/temperature", "{\"temperature\":%s,\"id\":%d}",
                 temperature, system_get_chip_id());
     }
 }

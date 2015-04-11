@@ -49,29 +49,27 @@ if (!type && !major && !minor) {
 
 var version = major + '.' + minor;
 
-var fwPath = path.join('firmware', 'upgrade');
-console.log(fwPath);
-
 var dstPath = path.join(destination_path, type);
 createDirectoryTree(dstPath);
-
 var dst1 = path.join(dstPath, "user1.bin");
 var dst2 = path.join(dstPath, "user2.bin");
 deleteFileIfExists(dst1);
 deleteFileIfExists(dst2);
 
+var fwPath = path.join('firmware', 'upgrade');
+var file1 = path.join(fwPath, "user1.512.new.bin");
+var file2 = path.join(fwPath, "user2.512.new.bin");
+
+var finalDstPath = path.join(destination_path, type, version);
+var fdst1 = path.join(finalDstPath, "user1.bin");
+var fdst2 = path.join(finalDstPath, "user2.bin");
+
 execute('make', ['rebuild', 'app=1'], function (code) {
     if (code == 0) {
-        var file1 = path.join(fwPath, "user1.512.new.bin");
         fs.renameSync(file1, dst1);
 
         execute('make', ['rebuild', 'app=2'], function (code) {
-            var file2 = path.join(fwPath, "user2.512.new.bin");
             fs.renameSync(file2, dst2);
-
-            var finalDstPath = path.join(destination_path, type, version);
-            var fdst1 = path.join(finalDstPath, "user1.bin");
-            var fdst2 = path.join(finalDstPath, "user2.bin");
 
             createDirectoryTree(finalDstPath);
             deleteFileIfExists(fdst1);
@@ -82,6 +80,8 @@ execute('make', ['rebuild', 'app=1'], function (code) {
 
             console.log('Copied %s to %s', file1, fdst1);
             console.log('Copied %s to %s', file2, fdst2);
+
+            process.exit(code);
         });
     }
     else
