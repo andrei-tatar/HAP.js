@@ -10,7 +10,7 @@
 
 #define OTA_TYPE			"hap_ir"
 #define OTA_MAJOR			0
-#define OTA_MINOR			1054
+#define OTA_MINOR			1055
 
 #define IR_OUT_MUX          PERIPHS_IO_MUX_MTMS_U
 #define IR_OUT_FUNC         FUNC_GPIO14

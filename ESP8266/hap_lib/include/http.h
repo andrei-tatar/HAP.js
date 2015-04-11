@@ -18,7 +18,7 @@ extern const char* mime_application_json;
 #define KEEP_ALIVE_TIMEOUT  30000
 #define CONNECTION_TIMEOUT  3000
 
-#define DEBUG   1
+#define DEBUG   0
 
 #if DEBUG
 #define DEBUG_PRINT ets_uart_printf

@@ -20,7 +20,6 @@ static ETSTimer timer;
 
 static ICACHE_FLASH_ATTR void send_pulses(uint16_t *pulses, uint8_t length)
 {
-    os_intr_lock();
     uint8_t i;
     uint32_t end = system_get_time();
     for (i=0; i<length; i++)
@@ -40,10 +39,10 @@ static ICACHE_FLASH_ATTR void send_pulses(uint16_t *pulses, uint8_t length)
         else
         {
             //just wait for pulse length
-            while (system_get_time() < end);
+            while (system_get_time() < end)
+                asm volatile("nop");
         }
     }
-    os_intr_unlock();
 }
 
 static ICACHE_FLASH_ATTR bool httpd_onrequest(struct HttpdConnectionSlot *slot, uint8_t verb, char* path, uint8_t *data, uint16_t length)
@@ -54,7 +53,9 @@ static ICACHE_FLASH_ATTR bool httpd_onrequest(struct HttpdConnectionSlot *slot, 
     char *ptr = data;
     if (*ptr++ == '[')
     {
+        ETS_INTR_LOCK();
         ETS_GPIO_INTR_DISABLE();
+
         pos = 0;
         while (pos < sizeof(pulses))
         {
@@ -67,7 +68,11 @@ static ICACHE_FLASH_ATTR bool httpd_onrequest(struct HttpdConnectionSlot *slot, 
         send_pulses(pulses, pos);
 
         pos = 0;first = true;
+
+        GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, GPIO_REG_READ(GPIO_STATUS_ADDRESS));
         ETS_GPIO_INTR_ENABLE();
+        ETS_INTR_UNLOCK();
+
         httpd_send_text(slot, 200, "OK");
     }
     else
