@@ -3,12 +3,8 @@ module.exports = function(util, log) {
         node.app.post('/temperature', function (req, res) {
             var device = node.device(req.body.id);
             if (device) {
-                if (!device.init_temperature) {
-                    device.init_temperature = true;
-                    util.createProperty(device, 'temperature', req.body.temperature);
-                }
-                else
-                    device.temperature = req.body.temperature;
+                device.temperature = req.body.temperature;
+                device.emit('temperature', req.body.temperature);
             }
             res.send("OK");
         });
