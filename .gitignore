@@ -4,3 +4,8 @@
 
 /prefs.json
 /node_modules
+/.idea
+*.out
+*.a
+*.o
+*.prefs
