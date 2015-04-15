@@ -9,9 +9,6 @@ var fs = require('fs'),
     spawn = require('child_process').spawn,
     path = require('path');
 
-//TODO: only on windows?
-process.env['PATH'] += ';C:\\MinGW\\bin;C:\\MinGW\\msys\\1.0\\bin';
-
 var destination_path = arguments[0];
 var make_type = arguments[1];
 if (make_type != 'all') {
