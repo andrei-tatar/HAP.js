@@ -32,9 +32,11 @@ static ICACHE_FLASH_ATTR void send_pulses(uint16_t *pulses, uint8_t length)
             do
             {
                 now = system_get_time();
-                IR_LED((now / 13) % 2);
+                IR_LED(1);os_delay_us(13);
+                IR_LED(0);os_delay_us(13);
+                //IR_LED((now / 13) % 2);
             } while (now < end);
-            IR_LED(0);
+            //IR_LED(0);
         }
         else
         {
@@ -132,7 +134,6 @@ static void ICACHE_FLASH_ATTR gpio_intr(void *arg)
 void ICACHE_FLASH_ATTR user_init()
 {
 	uart_init(BIT_RATE_115200);
-	ota_init(OTA_TYPE, OTA_MAJOR, OTA_MINOR);
 
 	ETS_GPIO_INTR_DISABLE();
 	ETS_GPIO_INTR_ATTACH(gpio_intr, NULL);
@@ -147,7 +148,6 @@ void ICACHE_FLASH_ATTR user_init()
     os_timer_disarm(&timer);
     os_timer_setfn(&timer, (os_timer_func_t *)on_timeout, &timer);
 
-    hap_init();
     httpd_register(httpd_onrequest);
-    httpd_init(80);
+    hap_init(OTA_TYPE, OTA_MAJOR, OTA_MINOR);
 }

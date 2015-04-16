@@ -21,6 +21,7 @@
 #include "osapi.h"
 #include "gpio.h"
 #include "i2c.h"
+#include "config.h"
 
 /**
  * Set SDA to state
