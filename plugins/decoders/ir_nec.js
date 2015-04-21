@@ -51,15 +51,17 @@ module.exports = function() {
             return byte;
         };
 
-        var address = readByte(pulses, 2 + 16*0);
-        var address_n = readByte(pulses, 2 + 16*1, true);
-        var command = readByte(pulses, 2 + 16*2);
-        var command_n = readByte(pulses, 2 + 16*3, true);
+        var address = readByte(pulses, 2);
+        if (isNaN(address)) return undefined;
 
-        if (address != address_n || command != command_n ||
-            isNaN(address) || isNaN(address_n) ||
-            isNaN(command) || isNaN(command_n))
-            return undefined;
+        var address_n = readByte(pulses, 18, true);
+        if (address != address_n) return undefined;
+
+        var command = readByte(pulses, 34);
+        if (isNaN(command)) return undefined;
+
+        var command_n = readByte(pulses, 50, true);
+        if (command != command_n) return undefined;
 
         if (!matches(pulses[66], bit_mark))
             return undefined;
