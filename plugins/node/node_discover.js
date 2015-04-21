@@ -44,22 +44,5 @@ module.exports = function (preferences, log) {
             send();
             setInterval(send, 10000);
         });
-
-        socket.on('message', function(msg, rinfo) {
-            var parts = new Buffer(msg).toString().split(':');
-            if (parts.length == 3) {
-                var id = parseInt(parts[0]);
-                var name = parts[1];
-                var type = parts[2];
-                var address = rinfo.address;
-
-                var device = node.device(id);
-                if (!device) {
-                    device = new node.NodeDevice(id, name, address, type);
-                    node.emit('device_discovered', device);
-                    node.addDevice(device);
-                }
-            }
-        });
     };
 };

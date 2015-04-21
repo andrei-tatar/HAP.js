@@ -1,12 +1,7 @@
-module.exports = function(util, log) {
+module.exports = function() {
     this.init = function (node) {
-        node.app.post('/temperature', function (req, res) {
-            var device = node.device(req.body.id);
-            if (device) {
-                device.temperature = req.body.temperature;
-                device.emit('temperature', req.body.temperature);
-            }
-            res.send("OK");
+        node.subscribe("/hap/temperature", function (device, message) {
+            device.temperature = parseFloat(message);
         });
     };
 };
