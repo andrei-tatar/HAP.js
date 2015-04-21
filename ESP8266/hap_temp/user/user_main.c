@@ -71,8 +71,8 @@ void user_init()
 	i2c_init();
 	tcn_init(0x48);
 
-	mqttConnected = onMqttConnected;
-	mqttPublished = onMqttPublished;
+	hap_setConnectedCb(onMqttConnected);
+	hap_setPublishedCb(onMqttPublished);
 
 	httpd_register(httpd_onrequest);
 	hap_init(OTA_TYPE, OTA_MAJOR, OTA_MINOR);

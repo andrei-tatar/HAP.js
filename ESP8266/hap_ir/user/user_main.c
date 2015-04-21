@@ -8,13 +8,17 @@
 #include "i2c.h"
 #include "user_config.h"
 #include "gpio.h"
-#include "http.h"
-#include "httpclient.h"
+#include "mqtt/mqtt.h"
+#include "settings.h"
+#include "hap.h"
 
-static uint16_t pulses[70];
+#define MAX_PULSES      70
+
+static uint16_t pulses[MAX_PULSES];
 static uint8_t pos = 0;
 static bool first = true;
 static ETSTimer timer;
+static MQTT_Client *client = NULL;
 
 #define IR_LED(x) GPIO_OUTPUT_SET(IR_OUT_PIN, x)
 
@@ -32,11 +36,11 @@ static ICACHE_FLASH_ATTR void send_pulses(uint16_t *pulses, uint8_t length)
             do
             {
                 now = system_get_time();
-                IR_LED(1);os_delay_us(13);
-                IR_LED(0);os_delay_us(13);
-                //IR_LED((now / 13) % 2);
+                //IR_LED(1);os_delay_us(13);
+                //IR_LED(0);os_delay_us(13);
+                IR_LED((now / 13) % 2);
             } while (now < end);
-            //IR_LED(0);
+            IR_LED(0);
         }
         else
         {
@@ -47,62 +51,24 @@ static ICACHE_FLASH_ATTR void send_pulses(uint16_t *pulses, uint8_t length)
     }
 }
 
-static ICACHE_FLASH_ATTR bool httpd_onrequest(struct HttpdConnectionSlot *slot, uint8_t verb, char* path, uint8_t *data, uint16_t length)
-{
-    if (strcasecmp(path, "/ir") != 0 || verb != HTTPD_VERB_POST)
-        return false;
-
-    char *ptr = data;
-    if (*ptr++ == '[')
-    {
-        ETS_INTR_LOCK();
-        ETS_GPIO_INTR_DISABLE();
-
-        pos = 0;
-        while (pos < sizeof(pulses))
-        {
-            pulses[pos++] = atou16(&ptr);
-            char next = *ptr++;
-            if (next == ']')
-                break;
-        }
-
-        send_pulses(pulses, pos);
-
-        pos = 0;first = true;
-
-        GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, GPIO_REG_READ(GPIO_STATUS_ADDRESS));
-        ETS_GPIO_INTR_ENABLE();
-        ETS_INTR_UNLOCK();
-
-        httpd_send_text(slot, 200, "OK");
-    }
-    else
-        httpd_send_text(slot, 400, "Expected an array of numbers");
-
-    return true;
-}
-
-static void on_timeout(void *arg)
+static void ICACHE_FLASH_ATTR on_timeout(void *arg)
 {
     uint8_t i;
 
     os_intr_lock();
-    if (pos && hap_get_server())
+    if (pos)
     {
-
-        char pulsesArray[360];
-        char *dest = pulsesArray;
+        uint8_t pulsesData[MAX_PULSES * 2];
+        uint8_t *dest = pulsesData;
         for (i=0;i<pos;i++)
         {
-            u16toa(pulses[i], &dest);
-            if (i < pos-1) *dest++ = ',';
+            uint16_t pulse = pulses[i];
+            *dest++ = (pulse >> 8) & 0xFF;
+            *dest++ = pulse & 0xFF;
         }
-        *dest = 0;
         os_intr_unlock();
 
-        httpPostJson(hap_get_server(), hap_get_port(), NULL,
-                "/ir", "{\"pulses\":[%s],\"id\":%d}", pulsesArray, system_get_chip_id());
+        MQTT_Publish(client, "/hap/ir", pulsesData, pos * 2, 0, 0);
     }
     else
         os_intr_unlock();
@@ -131,16 +97,54 @@ static void ICACHE_FLASH_ATTR gpio_intr(void *arg)
     os_timer_arm(&timer, 15, 0);
 }
 
+static ICACHE_FLASH_ATTR void onMqttData(MQTT_Client *client, const char* topic, const char *data, uint32_t len)
+{
+    if (strncasecmp(topic, "/hap/ir", 7) != 0 || len % 2 != 0)
+        return;
+
+    ETS_INTR_LOCK();
+    ETS_GPIO_INTR_DISABLE();
+
+    len /= 2;
+    pos = 0;
+    while (pos < MAX_PULSES && len)
+    {
+        pulses[pos++] = (*data++ << 8) | *data++;
+        len--;
+    }
+
+    send_pulses(pulses, pos);
+
+    pos = 0;first = true;
+
+    GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, GPIO_REG_READ(GPIO_STATUS_ADDRESS));
+    ETS_GPIO_INTR_ENABLE();
+    ETS_INTR_UNLOCK();
+}
+
+static void ICACHE_FLASH_ATTR onMqttConnected(MQTT_Client *c)
+{
+    client = c;
+    char topicName[50];
+    os_sprintf(topicName, "/hap/ir/%s", settings.nodeName);
+    MQTT_Subscribe(client, topicName, 0);
+
+    static bool firstConnected = true;
+    if (!firstConnected) return;
+    firstConnected = false;
+
+    ETS_GPIO_INTR_DISABLE();
+    ETS_GPIO_INTR_ATTACH(gpio_intr, NULL);
+    gpio_pin_intr_state_set(GPIO_ID_PIN(IR_IN_PIN), GPIO_PIN_INTR_ANYEDGE);
+    ETS_GPIO_INTR_ENABLE();
+}
+
 void ICACHE_FLASH_ATTR user_init()
 {
 	uart_init(BIT_RATE_115200);
 
-	ETS_GPIO_INTR_DISABLE();
-	ETS_GPIO_INTR_ATTACH(gpio_intr, NULL);
-	GPIO_DIS_OUTPUT(IR_IN_PIN);
 	PIN_FUNC_SELECT(IR_IN_MUX, IR_IN_FUNC);
-	gpio_pin_intr_state_set(GPIO_ID_PIN(IR_IN_PIN), GPIO_PIN_INTR_ANYEDGE);
-	ETS_GPIO_INTR_ENABLE();
+	GPIO_DIS_OUTPUT(IR_IN_PIN);
 
 	PIN_FUNC_SELECT(IR_OUT_MUX, IR_OUT_FUNC);
 	GPIO_OUTPUT_SET(IR_OUT_PIN, 0);
@@ -148,6 +152,7 @@ void ICACHE_FLASH_ATTR user_init()
     os_timer_disarm(&timer);
     os_timer_setfn(&timer, (os_timer_func_t *)on_timeout, &timer);
 
-    httpd_register(httpd_onrequest);
+    hap_setConnectedCb(onMqttConnected);
+    hap_setDataReceivedCb(onMqttData);
     hap_init(OTA_TYPE, OTA_MAJOR, OTA_MINOR);
 }
