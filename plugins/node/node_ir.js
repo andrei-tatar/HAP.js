@@ -1,4 +1,4 @@
-var self = module.exports = function(decoders, log, util) {
+var self = module.exports = function(decoders, log) {
 
     decoders.forEach(function (d) {
        log.v("[NODE_IR]Using " + d.__exports);

@@ -9,7 +9,7 @@
 #define INCLUDE_CONFIG_H_
 
 // DEBUG *************************
-#define DEBUG   1
+#define DEBUG   0
 
 #if DEBUG
 #define DEBUG_PRINT ets_uart_printf
