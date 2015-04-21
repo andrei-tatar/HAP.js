@@ -10,6 +10,7 @@
 
 #include <c_types.h>
 #include "mqtt/mqtt.h"
+#include "config.h"
 
 bool ICACHE_FLASH_ATTR hap_init(const char* type, uint16_t majorVersion, uint16_t minorVersion);
 

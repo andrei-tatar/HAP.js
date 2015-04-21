@@ -8,13 +8,14 @@ var self = module.exports = function(decoders, log, util) {
         for (var i=0; i<decoders.length; i++) {
             var pulses = decoders[i].encode(code);
             if (pulses) {
-                var data = new Buffer(pulses.length * 2);
+                var data = [];
                 for (i=0; i<pulses.length; i++) {
-                    data[i*2] = pulses >> 8;
-                    data[i*2+1] = (pulses & 0xFF);
+                    var pulse = pulses[i];
+                    data.push(pulse >> 8);
+                    data.push(pulses & 0xFF);
                 }
 
-                this.publish('/hap/ir/' + this.name, data, callback);
+                this.publish('/hap/ir/' + this.name, new Buffer(data), callback);
                 return true;
             }
         }

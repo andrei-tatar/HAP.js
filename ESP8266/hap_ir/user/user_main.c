@@ -36,11 +36,9 @@ static ICACHE_FLASH_ATTR void send_pulses(uint16_t *pulses, uint8_t length)
             do
             {
                 now = system_get_time();
-                //IR_LED(1);os_delay_us(13);
-                //IR_LED(0);os_delay_us(13);
-                IR_LED((now / 13) % 2);
+                IR_LED(1);os_delay_us(13);
+                IR_LED(0);os_delay_us(13);
             } while (now < end);
-            IR_LED(0);
         }
         else
         {
@@ -147,7 +145,7 @@ void ICACHE_FLASH_ATTR user_init()
 	GPIO_DIS_OUTPUT(IR_IN_PIN);
 
 	PIN_FUNC_SELECT(IR_OUT_MUX, IR_OUT_FUNC);
-	GPIO_OUTPUT_SET(IR_OUT_PIN, 0);
+	IR_LED(0);
 
     os_timer_disarm(&timer);
     os_timer_setfn(&timer, (os_timer_func_t *)on_timeout, &timer);
