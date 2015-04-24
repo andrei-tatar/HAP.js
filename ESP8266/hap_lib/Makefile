@@ -15,8 +15,8 @@ XTENSA_TOOLS_ROOT ?= c:/Espressif/xtensa-lx106-elf/bin
 SDK_BASE	?= c:/Espressif/ESP8266_SDK
 
 # which modules (subdirectories) of the project to include in compiling
-MODULES		= driver util
-EXTRA_INCDIR    = include $(SDK_BASE)/../include
+MODULES		= hap driver util mqtt
+EXTRA_INCDIR    = include $(SDK_BASE)/../include include/mqtt
 
 # compiler flags using during compilation of source files
 CFLAGS		= -Os -g -O2 -Wpointer-arith -Wundef -Werror -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH

@@ -132,8 +132,8 @@ endif
 TARGET		= app
 
 # which modules (subdirectories) of the project to include in compiling
-MODULES		= user
-EXTRA_INCDIR    = user $(SDK_BASE)/../include ./../hap_lib/include
+MODULES		= user driver
+EXTRA_INCDIR    = user driver $(SDK_BASE)/../include ./../hap_lib/include
 
 # libraries used in this project, mainly provided by the SDK
 LIBS		= c gcc hal phy pp net80211 lwip wpa main hap upgrade

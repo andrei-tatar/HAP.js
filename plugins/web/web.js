@@ -61,7 +61,7 @@ var self = module.exports = function(components, preferences, log, watcher, util
         failureFlash: true 
     }));
     
-    log.v("Starting web server");
+    log.v("[WEB]Starting web server");
     var http = http.Server(app);
     var io = socketio(http);
 

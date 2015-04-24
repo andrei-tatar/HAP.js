@@ -3,7 +3,7 @@
 #include <os_type.h>
 #include <stdarg.h>
 #include "httpd.h"
-#include "http.h"
+#include "config.h"
 
 #define HTTPD_MAX_CONN          4
 #define HTTPD_BUFFER_SIZE       2048
@@ -14,6 +14,16 @@
 #define HTTPD_STATE_WAITPOST    2 //Waiting for post data
 #define HTTPD_STATE_READY       3 //HTTP request was parsed completely and is ready for handling.
 #define HTTPD_STATE_RESPONDING  4 //Done, no more data should be processed
+
+#define KEEP_ALIVE_TIMEOUT  30000
+#define CONNECTION_TIMEOUT  3000
+
+const char* verb_get = "GET";
+const char* verb_post = "POST";
+
+const char* mime_textplain = "text/plain";
+const char* mime_texthtml = "text/html";
+const char* mime_application_json = "application/json";
 
 struct HttpdConnectionSlot {
 	struct espconn *conn;
@@ -323,6 +333,8 @@ static void ICACHE_FLASH_ATTR httpd_connect_callback(void *arg) {
 
 void ICACHE_FLASH_ATTR httpd_init(uint16_t port)
 {
+    DEBUG_PRINT("[HTTPD]Start server on port %d\n", port);
+
 	static struct espconn httpdconn;
 	static esp_tcp httpdtcp;
 

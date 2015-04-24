@@ -3,149 +3,109 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
     if (!preferences.node.port) preferences.node.port = 5111;
     if (!preferences.node.udpPort) preferences.node.udpPort = 5112;
     if (!preferences.node.serverName) preferences.node.serverName = 'hap_server';
+    if (!preferences.node.user) preferences.node.user = 'user';
+    if (!preferences.node.password) preferences.node.password = 'pass';
     
-    var bodyParser = require('body-parser'),
-        path = require('path'),
+    var path = require('path'),
         events = require('events'),
         nodeUtil = require("util"),
         fs = require('fs'),
-        express = require('express'),
-        http = require('http'),
-        Agent = require('agentkeepalive');
+        mosca = require('mosca');
 
-    var app = express();
-    app.use(bodyParser.json()); 
-
-    app.listen(preferences.node.port, function () {
-        log.i("[NODE]Listening...");
+    var server = new mosca.Server({
+        port: preferences.node.port
     });
 
-    var getLatestVersion = function(type) {
-        var dir = path.join($pluginDir, "fw", type);
-        if (!fs.existsSync(dir))
-            return undefined;
-        var dirs = fs.readdirSync(dir).filter(function(file) {
-            return fs.statSync(path.join(dir, file)).isDirectory();
+    server.on('ready', function () {
+        server.authenticate = function(client, username, password, callback) {
+            var authorized =
+                username === preferences.node.user &&
+                password.toString() === preferences.node.password;
+            callback(null, authorized);
+        };
+        server.authorizePublish = function(client, topic, payload, callback) {
+            callback(null, true); //allow all to publish
+        };
+        server.authorizeSubscribe = function(client, topic, callback) {
+            callback(null, true); //allow all to subscribe
+        };
+        log.i('[NODE]Mosca server is up and running');
+    });
+
+    this.subscribe = function(topic, callback) {
+        server.on('published', function(packet, client) {
+            if (client && client.id && packet.topic === topic)
+                callback(device(client.id), packet.payload);
         });
-        if (dirs.length == 0)
-            return undefined;
-        dirs.sort(function (a, b) {
-            return parseFloat(b) - parseFloat(a);
-        });
-        return dirs.first();
     };
 
-    app.get("/update/latest/:type", function (req, res) {
-        var latest = getLatestVersion(req.params.type);
-        if (latest)
-            res.send(latest);
-        else
-            res.status(404).send("Not Found");
-    });
-    
-    app.get("/update/get/:type/:num", function (req, res) {
-        log.v(req.connection.remoteAddress + " requested latest version for " + req.params.type);
-        var fwDir = path.join($pluginDir, "fw", req.params.type);
-        var latest = getLatestVersion(req.params.type);
-        if (latest) {
-            var filePath = path.join(fwDir, latest, req.params.num);
-            if (fs.existsSync(filePath)) {
-                res.sendFile(filePath);
-                return;
-            }
-        }
-        res.status(404).send("Not Found");
-    });
-
-    var devices = []; //devices are lazy created
-
-    var agent = new Agent({
-        maxSockets: 1,
-        keepAlive: true,
-        keepAliveTimeout: 60000,
-        timeout: 1500
-    });
-
-    this.NodeDevice = function (id, name, address, type) {
-        util.createReadOnlyProperty(this, 'id', id);
-        util.createReadOnlyProperty(this, 'address', address);
-        util.createReadOnlyProperty(this, 'type', type);
+    function NodeDevice(name) {
         util.createReadOnlyProperty(this, 'name', name);
-        util.createProperty(this, 'available', false);
 
-        this.request = function (method, path, data, callback) {
-            var options = {
-                hostname: this.address,
-                method: method,
-                path: path,
-                agent: agent
+        this.publish = function (topic, payload, onSent, opt) {
+            opt = opt || {};
+            if (typeof opt.qos != 'number') opt.qos = 0;
+            if (typeof opt.retain != "boolean") opt.retain = false;
+
+            var message = {
+                topic: topic,
+                payload: payload,
+                qos: opt.qos,
+                retain: opt.retain
             };
 
-            if (data) {
-                options.headers = {
-                    'Content-Type': 'application/json',
-                    'Content-Length': data.length
-                };
-            }
-
-            var req = http.request(options, function(res) {
-                var body = '';
-
-                res.on('data', function (chunk) {
-                    body += chunk;
-                });
-
-                res.on('end', function () {
-                    if (callback) callback(res.statusCode, body);
-                });
-            });
-
-            req.on('error', function(err) {
-                if (err.code === "ECONNRESET") {
-                    if (callback) callback(false);
-                }
-            });
-
-            if (data) req.write(data);
-            req.end();
-        };
-
-        this.get = function(path, complete) {
-            this.request('GET', path, undefined, complete);
-        };
-
-        this.post = function(path, data, complete) {
-            this.request('POST', path, JSON.stringify(data), complete);
-        };
-    };
-
-    nodeUtil.inherits(this.NodeDevice, events.EventEmitter);
-    var events = new events.EventEmitter();
-    this.on = events.on.bind(events);
-    this.emit = events.emit.bind(events);
-
-    this.app = app;
-    this.device = function (idOrName, onadd) {
-        var device = devices.first(function (d) {
-            return d.id == idOrName || d.name == idOrName;
-        });
-
-        if (util.isFunction(onadd)) {
-            if (device)
-                onadd(device);
-            else
-                events.on('device_add_'+idOrName, onadd);
+            server.publish(message, onSent);
         }
+    }
 
+    nodeUtil.inherits(NodeDevice, events.EventEmitter);
+
+    var devices = {};
+    var device = function (name) {
+        var device = devices[name];
+        if (!device) {
+            device = new NodeDevice(name);
+            devices[name] = device;
+        }
         return device;
     };
+    this.device = device;
 
-    this.addDevice = function (device) {
-        devices.push(device);
-        events.emit('device_add_'+device.id, device);
-        events.emit('device_add_'+device.name, device);
-        events.emit('device_add', device);
-    };
+    var nodeEvents = new events.EventEmitter();
+    this.on = nodeEvents.on.bind(nodeEvents);
+    this.emit = nodeEvents.emit.bind(nodeEvents);
+
+    server.on('clientConnected', function(client) {
+        log.v('[NODE]Device connected: ' + client.id);
+        var dev = device(client.id);
+        nodeEvents.emit('connected', dev);
+        dev.emit('connected');
+    });
+
+    server.on('clientDisconnecting', function(client) {
+        log.v('[NODE]Device disconnecting: ' + client.id);
+        var dev = device(client.id);
+        nodeEvents.emit('disconnecting', v);
+        dev.emit('disconnecting');
+    });
+
+    server.on('clientDisconnected', function(client) {
+        log.v('[NODE]Device disconnected: ' + client.id);
+        var dev = device(client.id);
+        nodeEvents.emit('disconnected', dev);
+        dev.emit('disconnected');
+    });
+
+    server.on('subscribed', function(topic, client) {
+        log.v('[NODE]Device subscribed to ' + topic + ': ' + client.id);
+        var dev = device(client.id);
+        nodeEvents.emit('subscribed', dev, topic);
+    });
+
+    // fired when a client subscribes to a topic
+    server.on('unsubscribed', function(topic, client) {
+        log.v('[NODE]Device unsubscribed from ' + topic + ': ' + client.id);
+    });
 
     var node = this;
     plugins.sort(function(a,b){return (a.order||0)-(b.order||0);});

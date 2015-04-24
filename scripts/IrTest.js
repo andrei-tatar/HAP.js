@@ -28,11 +28,18 @@ module.exports = function (MainTab, web, node) {
     });
 
     var notifier = new web.Notifier();
-    node.device('ir_living', function (blaster) {
-        allButtons.forEach(function(bt){if (bt)bt.enabled = true;});
-        blaster.on('ir', function (code) {
-            notifier.info({message: code, timeout: 15000});
+
+    var blaster = node.device('ir_living');
+
+    blaster.on('connected', function () {
+        allButtons.forEach(function (bt) {
+            if (bt)bt.enabled = true;
         });
+    });
+
+    blaster.on('ir', function (code) {
+        notifier.info({message: code, timeout: 15000});
+        console.log(code);
     });
 
     panel.add(notifier);

@@ -62,7 +62,7 @@ uart_config(uint8 uart_no)
     SET_PERI_REG_MASK(UART_INT_ENA(uart_no), UART_RXFIFO_FULL_INT_ENA);
 }
 
-/*
+
 LOCAL STATUS ICACHE_FLASH_ATTR
 uart1_tx_one_char(uint8 TxChar)
 {
@@ -81,15 +81,9 @@ uart1_tx_one_char(uint8 TxChar)
 LOCAL void ICACHE_FLASH_ATTR
 uart1_write_char(char c)
 {
-    if (c == '\n') {
-        uart1_tx_one_char('\r');
-        uart1_tx_one_char('\n');
-    } else if (c == '\r') {
-    } else {
-        uart1_tx_one_char(c);
-    }
+    uart1_tx_one_char(c);
 }
-*/
+
 
 /******************************************************************************
  * FunctionName : uart0_rx_intr_handler
@@ -170,6 +164,6 @@ uart_init(UartBautRate uart0_br)
     ETS_UART_INTR_ENABLE();
 
     // install uart1 putc callback
-    //os_install_putc1((void *)uart1_write_char);
+    os_install_putc1((void *)uart1_write_char);
 }
 

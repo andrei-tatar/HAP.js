@@ -4,7 +4,7 @@ var self = module.exports = function(path, saveTimeout, watcher, util, log) {
     saveTimeout = saveTimeout || 500;
     path = path || "preferences.json";
     
-    log.v("Using preference file: " + path);
+    log.v("[PREFS]Using preference file: " + path);
     
     var load = function () {
         try {
@@ -13,10 +13,10 @@ var self = module.exports = function(path, saveTimeout, watcher, util, log) {
             for (var k in obj) {
                 this[k] = obj[k];
             }
-            log.v("Preferences loaded");
+            log.v("[PREFS]Preferences loaded");
         }
         catch (e) {
-            log.e("Could not load preferences", e);
+            log.e("[PREFS]Could not load preferences", e);
         }
     }.bind(this);
 
@@ -30,9 +30,9 @@ var self = module.exports = function(path, saveTimeout, watcher, util, log) {
         var data = JSON.stringify(clone, null, 4);
         fs.writeFile(path, data, function (e) {
             if (e) {
-                log.e("Could not save preferences", e);
+                log.e("[PREFS]Could not save preferences", e);
             } else {
-                log.v("Preferences saved");
+                log.v("[PREFS]Preferences saved");
             }
         });
     }.bind(this);
