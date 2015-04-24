@@ -22,7 +22,7 @@ module.exports = function (preferences, log) {
         if (broadcastAddresses.length == 0)
             return;
 
-        log.v("Using broadcast address(es) : " + broadcastAddresses);
+        log.v("[NODE]Using broadcast address(es) : " + broadcastAddresses);
 
         var socket = dgram.createSocket("udp4");
         socket.bind();
