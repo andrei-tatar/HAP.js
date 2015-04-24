@@ -9,12 +9,13 @@ module.exports = function(util, $pluginDir) {
             util.copyProperties(this, opt);
             
             util.createProperty(this, "text", opt.text || "");
+            util.createProperty(this, "enabled", opt.enabled == undefined ? true : opt.enabled);
+
             this.on("text", function (arg) {
                 if (this.id)
                     web.emit("btut", {id: this.id, value: arg});
             });
             
-            util.createProperty(this, "enabled", opt.enabled == undefined ? true : opt.enabled);
             this.on("enabled", function (arg) {
                 if (this.id)
                     web.emit("btue", {id: this.id, value: arg});
