@@ -19,7 +19,7 @@ if (make_type != 'all') {
 }
 
 var headerFiles = getFilesSync('.', '.h');
-var type, major, minor;
+var type, version;
 
 for (var i=0; i<headerFiles.length; i++) {
     var fileContent = fs.readFileSync(headerFiles[i]).toString();
@@ -28,23 +28,17 @@ for (var i=0; i<headerFiles.length; i++) {
     if (!typeMatch) continue;
     type = typeMatch[1];
 
-    var majorMatch = fileContent.match(/#define\s+OTA_MAJOR\s+(\d+)/);
-    if (!majorMatch) continue;
-    major = majorMatch[1];
-
-    var minorMatch = fileContent.match(/#define\s+OTA_MINOR\s+(\d+)/);
-    if (!minorMatch) continue;
-    minor = minorMatch[1];
+    var versionMatch = fileContent.match(/#define\s+OTA_VERSION\s+(\d+)/);
+    if (!versionMatch) continue;
+    version = versionMatch[1];
 
     break;
 }
 
-if (!type && !major && !minor) {
-    console.error("No header file found that contanins type, major and minor version");
+if (!type || !version) {
+    console.error("No header file found that contanins type and version");
     return;
 }
-
-var version = major + '.' + minor;
 
 var dstPath = path.join(destination_path, type);
 createDirectoryTree(dstPath);

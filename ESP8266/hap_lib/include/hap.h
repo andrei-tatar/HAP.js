@@ -12,7 +12,7 @@
 #include "mqtt/mqtt.h"
 #include "config.h"
 
-bool ICACHE_FLASH_ATTR hap_init(const char* type, uint16_t majorVersion, uint16_t minorVersion);
+bool ICACHE_FLASH_ATTR hap_init(const char* type, uint16_t version);
 
 typedef void (*hapMqttCallback)(MQTT_Client *client);
 typedef void (*hapMqttDataCallback)(MQTT_Client *client, const char* topic, const char *data, uint32_t len);

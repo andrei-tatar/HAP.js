@@ -75,5 +75,5 @@ void user_init()
 	hap_setPublishedCb(onMqttPublished);
 
 	httpd_register(httpd_onrequest);
-	hap_init(OTA_TYPE, OTA_MAJOR, OTA_MINOR);
+	hap_init(OTA_TYPE, OTA_VERSION);
 }

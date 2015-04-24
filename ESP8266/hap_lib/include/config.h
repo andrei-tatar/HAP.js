@@ -9,7 +9,7 @@
 #define INCLUDE_CONFIG_H_
 
 // DEBUG *************************
-#define DEBUG   0
+#define DEBUG   1
 
 #if DEBUG
 #define DEBUG_PRINT ets_uart_printf
@@ -24,7 +24,7 @@
 
 #define PROTOCOL_NAMEv31    /*MQTT version 3.1 compatible with Mosquitto v0.15*/
 //PROTOCOL_NAMEv311         /*MQTT version 3.11 compatible with https://eclipse.org/paho/clients/testing/*/
-#define INFO    DEBUG_PRINT
+#define INFO    //DEBUG_PRINT
 
 // I2C *************************
 #define I2C_SLEEP_TIME 10

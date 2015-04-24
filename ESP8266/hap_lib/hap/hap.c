@@ -16,9 +16,13 @@
 
 #include "httpd.h"
 #include "config.h"
+#include "upgrade.h"
+
+#define UPGRADE_PREFIX  "/hap/upgrade/"
 
 static MQTT_Client mqttClient;
 static const char *node_type;
+static uint16_t version;
 static hapMqttCallback mqttConnected, mqttDisconnected, mqttPublished;
 static hapMqttDataCallback mqttData;
 
@@ -47,6 +51,11 @@ static void ICACHE_FLASH_ATTR mqttConnectedCb(uint32_t *args)
 {
     DEBUG_PRINT("[MQTT]Connected\n");
     MQTT_Client* client = (MQTT_Client*)args;
+
+    char aux[50];
+    os_sprintf(aux, UPGRADE_PREFIX"%s", node_type);
+    MQTT_Subscribe(client, aux, 0);
+
     if (mqttConnected) mqttConnected(client);
 }
 
@@ -64,6 +73,83 @@ static void ICACHE_FLASH_ATTR mqttPublishedCb(uint32_t *args)
     if (mqttPublished) mqttPublished(client);
 }
 
+static void ICACHE_FLASH_ATTR ota_finished_callback(void *arg)
+{
+    struct upgrade_server_info *update = arg;
+    if (update->upgrade_flag == true)
+    {
+         DEBUG_PRINT("[OTA]success; rebooting!\n");
+        system_upgrade_reboot();
+    }
+    else
+    {
+        DEBUG_PRINT("[OTA]failed!\n");
+    }
+
+    os_free(update->pespconn);
+    os_free(update->url);
+    os_free(update);
+}
+
+static void ICACHE_FLASH_ATTR handleUpgrade(const char *data, uint32_t data_len)
+{
+    const char* file;
+    uint8_t userBin = system_upgrade_userbin_check();
+    switch (userBin)
+    {
+    case UPGRADE_FW_BIN1: file = "user2.bin"; break;
+    case UPGRADE_FW_BIN2: file = "user1.bin"; break;
+    default:
+        DEBUG_PRINT("[OTA]Invalid userbin number!\n");
+        return;
+    }
+
+    //data should contain a string in the following format:
+    //version\0port\0path\0
+    uint16_t serverVersion = atoi(data);
+    if (serverVersion <= version)
+    {
+        DEBUG_PRINT("[OTA]No update. Server version:%d, local version %d\n", serverVersion, version);
+        return;
+    }
+
+    while (*data) data++;data++;
+
+    DEBUG_PRINT("[OTA]Upgrade available version: %d\n", serverVersion, data);
+
+    struct upgrade_server_info* update = (struct upgrade_server_info *)os_zalloc(sizeof(struct upgrade_server_info));
+    update->pespconn = (struct espconn *)os_zalloc(sizeof(struct espconn));
+    os_memcpy(update->ip, mqttClient.pCon->proto.tcp->remote_ip, 4);
+    update->port = atoi(data);
+    while (*data) data++;data++;
+
+    DEBUG_PRINT("[OTA]Server "IPSTR":%d. Path: %s%s\n", IP2STR(update->ip), update->port, data, file);
+
+    update->check_cb = ota_finished_callback;
+    update->check_times = 10000;
+    update->url = (uint8 *)os_zalloc(512);
+
+    os_sprintf(update->url,
+            "GET %s%s HTTP/1.1\r\n"
+            "Host: "IPSTR":%d\r\n"
+            "Connection: close\r\n"
+            "\r\n",
+            data, file, IP2STR(update->ip), update->port);
+
+    if (system_upgrade_start(update) == false)
+    {
+        ets_uart_printf("[OTA]Could not start upgrade\n");
+
+        os_free(update->pespconn);
+        os_free(update->url);
+        os_free(update);
+    }
+    else
+    {
+        ets_uart_printf("[OTA]Upgrading...\n");
+    }
+}
+
 static void ICACHE_FLASH_ATTR mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const char *data, uint32_t data_len)
 {
     char *topicBuf = (char*)os_zalloc(topic_len+1);
@@ -71,6 +157,13 @@ static void ICACHE_FLASH_ATTR mqttDataCb(uint32_t *args, const char* topic, uint
 
     os_memcpy(topicBuf, topic, topic_len);
     topicBuf[topic_len] = 0;
+
+    if (strncmp(topicBuf, UPGRADE_PREFIX, strlen(UPGRADE_PREFIX)) == 0 && data_len > 5)
+    {
+        DEBUG_PRINT("[MQTT]Upgrade data received\n");
+        handleUpgrade(data, data_len);
+        return;
+    }
 
     DEBUG_PRINT("[MQTT]Data on topic: %s, length: %d\n", topicBuf, data_len);
 
@@ -111,10 +204,9 @@ static void ICACHE_FLASH_ATTR udp_received(void *arg, char *data, unsigned short
 
         DEBUG_PRINT("[HAP]Initializing MQTT\n");
 
-        char aux[30];
+        char aux[20];
         os_sprintf(aux, IPSTR, IP2STR(&address));
         MQTT_InitConnection(&mqttClient, aux, hapPort);
-
         MQTT_InitClient(&mqttClient, settings.nodeName, settings.hapUserName, settings.hapPassword, MQTT_KEEPALIVE, 1);
         MQTT_OnConnected(&mqttClient, mqttConnectedCb);
         MQTT_OnDisconnected(&mqttClient, mqttDisconnectedCb);
@@ -145,9 +237,11 @@ static void ICACHE_FLASH_ATTR udp_init()
 
 bool ICACHE_FLASH_ATTR index_httpd_request(struct HttpdConnectionSlot *slot, uint8_t verb, char* path, uint8_t *data, uint16_t length);
 
-bool ICACHE_FLASH_ATTR hap_init(const char* type, uint16_t majorVersion, uint16_t minorVersion)
+bool ICACHE_FLASH_ATTR hap_init(const char* type, uint16_t pVersion)
 {
     node_type = type;
+    version = pVersion;
+
     settings_load();
     httpd_register(index_httpd_request);
 
