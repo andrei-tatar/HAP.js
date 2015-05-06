@@ -5,7 +5,7 @@ socket.on("ct_rm", function (id) {
 
 socket.on("ct_upd", function (arg) {
     $.ajax({
-		url: "/container/render/" + arg.child.id,
+		url: "/container/render/" + arg.child.id
 	}).done(function (html) {
 		addContainerChild($("["+arg.attrib+"]"), html, arg.child);
 	});
@@ -51,8 +51,8 @@ function addContainerChild(rootElement, html, child) {
 	}
 	
 	for (var i=0;i<children.length; i++) {
-		child = $(children[i]);
-		var order = child.attr("data-order");
+		var currentChild = $(children[i]);
+		var order = currentChild.attr("data-order");
 		if (child.order < order) {
 			if (prevChild)
 				element.insertAfter(prevChild);
@@ -61,10 +61,10 @@ function addContainerChild(rootElement, html, child) {
 			return;
 		}
 		
-		prevChild = child;
+		prevChild = currentChild;
 	}
 	
 	rootElement.append(element);
-};
+}
 
 $.ajax({url: "/rootcontainer"}).done(function (data) {$("body").append(data);});

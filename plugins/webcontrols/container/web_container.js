@@ -75,8 +75,6 @@ module.exports = function(util, $pluginDir) {
                 child.parent = container;
                 containeritems.push(child);
                 var simplified = simplifyContainerChild(child);
-                web.emit("ct_upd", {attrib: container.attrib(), child: simplified});
-                
                 child.refresh = function() {
                     web.emit("ct_upd", {attrib: container.attrib(), child: simplified});
                 };
@@ -94,7 +92,9 @@ module.exports = function(util, $pluginDir) {
                     
                     web.emit("ct_rm", id);
                 };
-                
+
+                web.emit("ct_upd", {attrib: container.attrib(), child: simplified});
+
                 return child;
             };
             

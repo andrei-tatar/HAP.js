@@ -29,7 +29,7 @@ var self = module.exports = function(plugins, log, preferences, $pluginDir, util
         server.authorizeSubscribe = function(client, topic, callback) {
             callback(null, true); //allow all to subscribe
         };
-        log.i('[NODE]Mosca server is up and running');
+        log.i('[NODE]Listening...');
     });
 
     this.subscribe = function(topic, callback) {

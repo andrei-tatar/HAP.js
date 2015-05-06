@@ -3,7 +3,18 @@ module.exports = function(util, $pluginDir) {
     var tabControlTemplate = new util.LazyTemplate("tabcontrol.html", $pluginDir);
     var tabHeadersTemplate = new util.LazyTemplate("tabheaders.html", $pluginDir);
     var tabPagesTemplate = new util.LazyTemplate("tabpages.html", $pluginDir);
-    
+
+    var events = require('events'),
+        nodeUtil = require('util');
+
+    function TabHeader(child) {
+        this.order = child.order;
+        this.html = function () {
+            return headerTemplate.value(child);
+        };
+    }
+    nodeUtil.inherits(TabHeader, events.EventEmitter);
+
     this.init = function(web) {
         web.TabControl = function(opt) {
             opt = opt || {};
@@ -18,12 +29,7 @@ module.exports = function(util, $pluginDir) {
             
             tabcontrol.add = function (child) {
                 var added = tabpages.add(child);
-                var header = {
-                    order: child.order,
-                    html: function () {
-                        return headerTemplate.value(child);
-                    }
-                };
+                var header = new TabHeader(child);
                 tabheaders.add(header);
                 
                 var oldrefresh = child.refresh;
