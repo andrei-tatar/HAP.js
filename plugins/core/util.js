@@ -39,13 +39,16 @@ module.exports = function() {
         return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
     };
     
-    this.createProperty = function (obj, name, initialValue) {
+    this.createProperty = function (obj, name, initialValue, converter) {
+        converter = converter || dummyConverter;
+
         var value = undefined;
         obj.__defineGetter__(name, function(){return value;});
         obj.__defineSetter__(name, function(arg) {
-            if (value === arg) return;
-            value = arg;
-            this.emit(name, value);
+            var converted = converter(arg);
+            if (value === converted) return;
+            value = converted;
+            this.emit(name, converted);
         });
         obj[name] = initialValue;
     };
@@ -77,4 +80,6 @@ module.exports = function() {
         
         return false;
     };
+
+    function dummyConverter(value) { return value; }
 };

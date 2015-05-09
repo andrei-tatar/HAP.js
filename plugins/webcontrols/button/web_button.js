@@ -1,14 +1,22 @@
 module.exports = function(util, $pluginDir) {
     var template = new util.LazyTemplate("button.html", $pluginDir);
-    var express = require('express');
+    var express = require('express'),
+        escape = require('escape-html');
 
     this.init = function (web) {
         web.Button = function(opt) {
             opt = opt || {};
 
+            if (opt.click) {
+                this.on("click", opt.click);
+                delete opt.click;
+            }
+
             util.copyProperties(this, opt);
             
-            util.createProperty(this, "text", opt.text || "");
+            util.createProperty(this, "text", opt.text || "", function (t) {
+                return this.rawHtml ? t : escape(t);
+            }.bind(this));
             util.createProperty(this, "enabled", opt.enabled == undefined ? true : opt.enabled);
 
             this.on("text", function (arg) {

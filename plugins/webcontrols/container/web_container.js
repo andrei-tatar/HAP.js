@@ -51,8 +51,11 @@ module.exports = function(util, $pluginDir) {
                 }); 
             };
             container.on("remove", function () {
-                var index = containers.indexOf(container);
+                var index = containers.indexOf(this);
                 if (index > -1) containers.splice(index, 1);
+            });
+            container.on("added", function () {
+                containers.push(this);
             });
             container.filterItems = function (req) {
                 return containeritems;
@@ -70,8 +73,7 @@ module.exports = function(util, $pluginDir) {
                 }
                 if (!child.order) child.order = 0;
                 
-                var id = idutil++;
-                child.id = id;
+                child.id = idutil++;
                 child.parent = container;
                 containeritems.push(child);
                 var simplified = simplifyContainerChild(child);
@@ -82,23 +84,20 @@ module.exports = function(util, $pluginDir) {
                 child.getstyle = getstyle.bind(this, child.css);
                     
                 child.remove = function() {
-                    child.emit("remove");
-                    child.removeAllListeners();
-                    
+                    if (child.emit) child.emit("remove");
+
                     containeritems.remove(child);
                     delete child.parent;
                     delete child.remove;
                     delete child.refresh;
                     
-                    web.emit("ct_rm", id);
+                    web.emit("ct_rm", child.id);
                 };
 
                 web.emit("ct_upd", {attrib: container.attrib(), child: simplified});
-
+                if (child.emit) child.emit("added");
                 return child;
             };
-            
-            containers.push(container);
         };
         
         nodeUtil.inherits(web.Container, events.EventEmitter);
